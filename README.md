@@ -1,8 +1,8 @@
 # Naive DSP Library
 
-一个乃衣服的 DSP 库，包含多种音效和 DSP 算法实现。
+A naive DSP library which implements several audio effects and processing algorithms.
 
-## 编译
+## Compile
 
     mkdir build
     cd build
