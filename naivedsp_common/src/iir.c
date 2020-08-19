@@ -96,16 +96,16 @@ void naive_iir_2nd_coeffs_init(NaiveIir2ndCoeffs *self)
     self->a2 = 0;
 }
 
-NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 max_num_sos)
+NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 num_sos_cap)
 {
     int err = NAIVE_OK;
 
-    naive_iir_1st_df1_states_init(&states->fos_states);
+    naive_iir_1st_df1_states_init(states->fos_states);
 
-    states->max_num_sos = max_num_sos;
+    states->num_sos_cap = num_sos_cap;
 
-    if (max_num_sos > 0) {
-        states->sos_states = alloc(allocator, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveIir2ndDf1States), sizeof(NaiveIir2ndDf1States) * max_num_sos);
+    if (num_sos_cap > 0) {
+        states->sos_states = alloc(allocator, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveIir2ndDf1States), sizeof(NaiveIir2ndDf1States) * num_sos_cap);
         if (!err && !states->sos_states)
             err = NAIVE_ERR_NOMEM;
     } else {
@@ -113,7 +113,7 @@ NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc 
     }
 
     if (states->sos_states) {
-        for (NaiveI32 i = 0; i < max_num_sos; ++i) {
+        for (NaiveI32 i = 0; i < num_sos_cap; ++i) {
             naive_iir_2nd_df1_states_init(&states->sos_states[i]);
         }
     }
@@ -126,7 +126,7 @@ void naive_iir_df1_process(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs
     (void)scratch;
 
     if (coeffs->has_fos) {
-        naive_iir_1st_df1_process(&states->fos_states, &coeffs->fos_coeffs, inout, len);
+        naive_iir_1st_df1_process(states->fos_states, coeffs->fos_coeffs, inout, len);
     }
 
     for (NaiveI32 i = 0; i < coeffs->num_sos; ++i) {
@@ -138,7 +138,7 @@ void naive_iir_df1_process(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs
 
 void naive_iir_df1_reset(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs *coeffs)
 {
-    naive_iir_1st_df1_reset(&states->fos_states);
+    naive_iir_1st_df1_reset(states->fos_states);
 
     for (NaiveI32 i = 0; i < coeffs->num_sos; ++i) {
         naive_iir_2nd_df1_reset(&states->sos_states[i]);
@@ -147,7 +147,7 @@ void naive_iir_df1_reset(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs *
 
 NaiveResult naive_iir_df1_set_coeffs(NaiveIirDf1States *states, NaiveIirCoeffs *coeffs, NAIVE_CONST NaiveIirCoeffs *from)
 {
-    if (from->num_sos > states->max_num_sos)
+    if (from->num_sos > states->num_sos_cap)
         return NAIVE_ERR_INVALID_PARAMETER;
 
     coeffs->has_fos = from->has_fos;

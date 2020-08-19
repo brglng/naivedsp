@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
 #include "naivedsp/platdefs.h"
 #include "naivedsp/typedefs.h"
 
@@ -15,6 +14,7 @@ extern "C" {
 #if __STDC_VERSION__ >= 201112L
 #define NAIVE_ALIGNOF(type) _Alignof(type)
 #else
+#include <stddef.h>
 #define NAIVE_ALIGNOF(type) offsetof(struct { char c; type d; }, d)
 #endif
 #endif
@@ -26,18 +26,16 @@ extern "C" {
 #endif
 
 typedef enum {
-    NAIVE_MEM_COEFF,
+    NAIVE_MEM_PARAM,
     NAIVE_MEM_STATE,
     NAIVE_MEM_SCRATCH,
 } NaiveMemType;
 
 typedef void *NaiveAllocFunc(void *context, NaiveMemType type, NaiveUSize alignment, NaiveUSize size);
 
-#if !NAIVE_ADSP21489
-
 typedef struct _NaiveDefaultAllocator {
-    NaiveUSize    num_blocks;
-    NaiveUSize    num_blocks_cap;
+    NaiveUSize  _num_blocks_cap;
+    NaiveUSize  num_blocks;
     void        **blocks;
 } NaiveDefaultAllocator;
 
@@ -46,13 +44,7 @@ void naive_default_allocator_finalize(NaiveDefaultAllocator *self);
 
 NAIVE_ATTRIBUTE_MALLOC void *naive_default_alloc(void *allocator, NaiveMemType type, NaiveUSize alignment, NaiveUSize size);
 
-#endif
-
-#if NAIVE_ADSP21489
-#define NAIVE_CEIL_8_BYTES(size) ((NaiveUSize)(size))
-#else
 #define NAIVE_CEIL_8_BYTES(size) ((((NaiveUSize)(size) + 7) / 8) * 8)
-#endif
 
 #ifdef __cplusplus
 }

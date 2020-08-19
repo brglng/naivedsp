@@ -24,7 +24,7 @@ void naive_iir_2nd_df1_reset(NaiveIir2ndDf1States *self);
 #define NAIVE_IIR_SCRATCH_SIZE(block_size) 0
 #endif
 
-NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 max_num_sos);
+NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 num_sos_limit);
 
 void naive_iir_df1_process(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs *coeffs, NaiveF32 *inout, NaiveI32 len, void *scratch);
 

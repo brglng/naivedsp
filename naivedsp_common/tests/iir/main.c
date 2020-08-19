@@ -20,7 +20,7 @@ NaiveResult set_params(void *_context, NAIVE_CONST NaiveTestCaseDesc *case_desc,
 {
     TestContext *context = _context;
 
-    context->order = naive_test_case_desc_get_u32(case_desc, KEY_ORDER);
+    context->order = naive_test_case_desc_get_i32(case_desc, KEY_ORDER);
     int type = naive_test_case_desc_get_int(case_desc, KEY_TYPE);
     NaiveF32 freq = naive_test_case_desc_get_f32(case_desc, KEY_FREQ);
 
@@ -28,59 +28,59 @@ NaiveResult set_params(void *_context, NAIVE_CONST NaiveTestCaseDesc *case_desc,
     case 1:
         switch (type) {
         case TYPE_LOWPASS:
-            naive_iir_1st_coeffs_lowpass(&context->iir_1st_coeffs, sample_rate, freq);
+            naive_iir_1st_coeffs_set_lowpass(&context->iir_1st_coeffs, sample_rate, freq);
             break;
         case TYPE_HIGHPASS:
-            naive_iir_1st_coeffs_highpass(&context->iir_1st_coeffs, sample_rate, freq);
+            naive_iir_1st_coeffs_set_highpass(&context->iir_1st_coeffs, sample_rate, freq);
             break;
         case TYPE_ALLPASS:
-            naive_iir_1st_coeffs_allpass(&context->iir_1st_coeffs, sample_rate, freq);
+            naive_iir_1st_coeffs_set_allpass(&context->iir_1st_coeffs, sample_rate, freq);
             break;
         case TYPE_BUTTERWORTH_LOWPASS:
-            naive_iir_1st_coeffs_butterworth_lowpass(&context->iir_1st_coeffs, sample_rate, freq);
+            naive_iir_1st_coeffs_set_butterworth_lowpass(&context->iir_1st_coeffs, sample_rate, freq);
             break;
         case TYPE_BUTTERWORTH_HIGHPASS:
-            naive_iir_1st_coeffs_butterworth_highpass(&context->iir_1st_coeffs, sample_rate, freq);
+            naive_iir_1st_coeffs_set_butterworth_highpass(&context->iir_1st_coeffs, sample_rate, freq);
             break;
         }
         break;
     case 2:
         switch (type) {
         case TYPE_LOWPASS:
-            naive_iir_2nd_coeffs_lowpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_lowpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_HIGHPASS:
-            naive_iir_2nd_coeffs_highpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_highpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_BANDPASS:
-            naive_iir_2nd_coeffs_bandpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_bandpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_BANDSTOP:
-            naive_iir_2nd_coeffs_bandstop(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_bandstop(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_ALLPASS:
-            naive_iir_2nd_coeffs_allpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_allpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_LOW_SHELF:
-            naive_iir_2nd_coeffs_low_shelf(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
+            naive_iir_2nd_coeffs_set_low_shelf(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
             break;
         case TYPE_HIGH_SHELF:
-            naive_iir_2nd_coeffs_high_shelf(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
+            naive_iir_2nd_coeffs_set_high_shelf(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
             break;
         case TYPE_PEAK:
-            naive_iir_2nd_coeffs_peak(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
+            naive_iir_2nd_coeffs_set_peak(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q), naive_test_case_desc_get_f32(case_desc, KEY_GAIN));
             break;
         case TYPE_BUTTERWORTH_LOWPASS:
-            naive_iir_2nd_coeffs_butterworth_lowpass(&context->iir_2nd_coeffs, sample_rate, freq);
+            naive_iir_2nd_coeffs_set_butterworth_lowpass(&context->iir_2nd_coeffs, sample_rate, freq);
             break;
         case TYPE_BUTTERWORTH_HIGHPASS:
-            naive_iir_2nd_coeffs_butterworth_highpass(&context->iir_2nd_coeffs, sample_rate, freq);
+            naive_iir_2nd_coeffs_set_butterworth_highpass(&context->iir_2nd_coeffs, sample_rate, freq);
             break;
         case TYPE_BUTTERWORTH_BANDPASS:
-            naive_iir_2nd_coeffs_butterworth_bandpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_butterworth_bandpass(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         case TYPE_BUTTERWORTH_BANDSTOP:
-            naive_iir_2nd_coeffs_butterworth_bandstop(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
+            naive_iir_2nd_coeffs_set_butterworth_bandstop(&context->iir_2nd_coeffs, sample_rate, freq, naive_test_case_desc_get_f32(case_desc, KEY_Q));
             break;
         }
         break;

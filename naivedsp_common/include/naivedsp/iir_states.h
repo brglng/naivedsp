@@ -20,9 +20,8 @@ typedef struct {
 } NaiveIir2ndDf1States;
 
 typedef struct {
-    NaiveIir1stDf1States  fos_states;
-
-    NaiveI32              max_num_sos;
+    NaiveI32              num_sos_cap;
+    NaiveIir1stDf1States  *fos_states;
     NaiveIir2ndDf1States  *sos_states;
 } NaiveIirDf1States;
 

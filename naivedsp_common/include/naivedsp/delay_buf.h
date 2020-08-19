@@ -16,7 +16,7 @@ NAIVE_INLINE void naive_delay_buf_reset(NaiveDelayBuf *self) {
     self->len = 0;
 }
 
-NAIVE_INLINE NAIVE_CONST NaiveF32* naive_delay_buf_front(NAIVE_CONST NaiveDelayBuf *self) {
+NAIVE_INLINE NaiveF32* naive_delay_buf_front(NaiveDelayBuf *self) {
     return &self->buf[self->pos];
 }
 

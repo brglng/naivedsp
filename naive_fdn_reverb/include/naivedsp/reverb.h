@@ -7,7 +7,7 @@ extern "C" {
 
 #include "naivedsp/math.h"
 #include "naivedsp/memory.h"
-#include "naivedsp/result.h"
+#include "naivedsp/typedefs.h"
 #include "naivedsp/peq.h"
 #include "naivedsp/reverb_states.h"
 #include "naivedsp/reverb_params.h"

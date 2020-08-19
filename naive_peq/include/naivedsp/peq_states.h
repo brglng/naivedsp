@@ -5,11 +5,11 @@
 extern "C" {
 #endif
 
-#include "naivedsp/inttypes.h"
 #include "naivedsp/iir_states.h"
+#include "naivedsp/typedefs.h"
 
 typedef struct {
-    NaiveF32              max_bands;
+    NaiveF32              num_bands_cap;
     NaiveIirDf1States     *band_states;
 } NaivePeqStates;
 

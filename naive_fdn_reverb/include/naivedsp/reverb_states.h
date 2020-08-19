@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "naivedsp/fifo_def.h"
+#include "naivedsp/delay_buf_def.h"
 #include "naivedsp/peq_states.h"
 
 typedef struct {

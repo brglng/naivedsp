@@ -10,7 +10,8 @@ extern "C" {
 enum {
     KEY_DELAY_TIME = NAIVE_TEST_CASE_DESC_KEY_USER_BEGIN,
     KEY_FEEDBACK,
-    KEY_MIX,
+    KEY_DRY_GAIN,
+    KEY_WET_GAIN
 };
 
 NaiveResult init_test_desc(NaiveTestDesc *test_desc, NaiveAllocFunc *alloc, void *allocator);

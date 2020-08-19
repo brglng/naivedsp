@@ -9,8 +9,6 @@ extern "C" {
 #define NAIVE_X86_64 1
 #elif defined(__i386__)
 #define NAIVE_X86 1
-#elif defined(__ADSP21489__)
-#define NAIVE_ADSP21489 1
 #endif
 
 #if defined(__APPLE__)
@@ -35,8 +33,6 @@ extern "C" {
 #define NAIVE_GCC 1
 #elif defined(__clang__)
 #define NAIVE_CLANG 1
-#elif defined(_ADI_COMPILER)
-#define NAIVE_ADI_COMPILER 1
 #endif
 
 #if NAIVE_MSVC && _MSC_VER < 1800

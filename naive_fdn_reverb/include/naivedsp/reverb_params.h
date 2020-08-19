@@ -5,8 +5,7 @@
 extern "C" {
 #endif
 
-#include "naivedsp/inttypes.h"
-#include "naivedsp/floattypes.h"
+#include "naivedsp/typedefs.h"
 #include "naivedsp/peq_coeffs.h"
 
 typedef struct {

@@ -4,12 +4,12 @@
 #include "naivedsp/memory.h"
 #include "naivedsp/assert.h"
 
-#if !NAIVE_ADSP21489
+#define INIT_NUM_BLOCKS_CAP  32
 
 void naive_default_allocator_init(NaiveDefaultAllocator *self)
 {
+    self->_num_blocks_cap = INIT_NUM_BLOCKS_CAP;
     self->num_blocks = 0;
-    self->num_blocks_cap = 32;
     self->blocks = malloc(sizeof(void *) * 32);
     NAIVE_ASSERT(self->blocks != NULL);
 }
@@ -20,10 +20,10 @@ NAIVE_ATTRIBUTE_MALLOC void *naive_default_alloc(void *_self, NaiveMemType type,
 
     NaiveDefaultAllocator *self = _self;
 
-    if (self->num_blocks == self->num_blocks_cap) {
+    if (self->num_blocks == self->_num_blocks_cap) {
         self->blocks = realloc(self->blocks, sizeof(void *) * self->num_blocks * 2);
         NAIVE_ASSERT(self->blocks != NULL);
-        self->num_blocks_cap *= 2;
+        self->_num_blocks_cap *= 2;
     }
 
     NaiveUSize request_size = size + 1 + alignment;
@@ -50,5 +50,3 @@ void naive_default_allocator_finalize(NaiveDefaultAllocator *self)
     }
     free(self->blocks);
 }
-
-#endif
