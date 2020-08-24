@@ -2,8 +2,9 @@
 #include <string.h>
 #include "naivedsp/delay_buf.h"
 
-NaiveResult naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void *allocator, NaiveI32 size) {
-    self->buf = alloc(allocator, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32), size);
+NaiveErr naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void *allocator, NaiveI32 size) {
+    NAIVE_ASSERT(size > 0);
+    self->buf = alloc(allocator, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32), (NaiveUSize)size);
     self->size = size;
     self->pos = 0;
     self->len = 0;
@@ -17,10 +18,10 @@ NaiveResult naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void
 void naive_delay_buf_write(NaiveDelayBuf *self, NAIVE_CONST NaiveF32 *buf, NaiveI32 len) {
     NAIVE_ASSERT(len <= self->size - self->len);
     if (len <= self->size - (self->pos + self->len)) {
-        memcpy(&self->buf[self->pos + self->len], buf, sizeof(NaiveF32) * len);
+        memcpy(&self->buf[self->pos + self->len], buf, sizeof(NaiveF32) * (NaiveUSize)len);
     } else {
-        memmove(self->buf, &self->buf[self->pos], sizeof(NaiveF32) * self->len);
-        memcpy(&self->buf[self->len], buf, sizeof(NaiveF32) * len);
+        memmove(self->buf, &self->buf[self->pos], sizeof(NaiveF32) * (NaiveUSize)self->len);
+        memcpy(&self->buf[self->len], buf, sizeof(NaiveF32) * (NaiveUSize)len);
         self->pos = 0;
     }
     self->len += len;
@@ -29,10 +30,10 @@ void naive_delay_buf_write(NaiveDelayBuf *self, NAIVE_CONST NaiveF32 *buf, Naive
 void naive_delay_buf_write_zeros(NaiveDelayBuf *self, NaiveI32 len) {
     NAIVE_ASSERT(len <= self->size - self->len);
     if (len <= self->size - (self->pos + self->len)) {
-        memset(&self->buf[self->pos + self->len], 0, sizeof(NaiveF32) * len);
+        memset(&self->buf[self->pos + self->len], 0, sizeof(NaiveF32) * (NaiveUSize)len);
     } else {
-        memmove(self->buf, &self->buf[self->pos], sizeof(NaiveF32) * self->len);
-        memset(&self->buf[self->len], 0, sizeof(NaiveF32) * len);
+        memmove(self->buf, &self->buf[self->pos], sizeof(NaiveF32) * (NaiveUSize)self->len);
+        memset(&self->buf[self->len], 0, sizeof(NaiveF32) * (NaiveUSize)len);
         self->pos = 0;
     }
     self->len += len;

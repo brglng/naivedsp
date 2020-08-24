@@ -19,8 +19,7 @@ typedef struct {
 
 #define NAIVE_TEST_STATS_INIT {0, 0, 0}
 void naive_test_stats_init(NaiveTestStats *stats);
-void naive_test_stats_update(NaiveTestStats *stats, NaiveF32 *out, NaiveF32 *ref_out,
-                           NaiveI32 block_size);
+void naive_test_stats_update(NaiveTestStats *stats, NaiveF32 *out, NaiveF32 *ref_out, NaiveI32 block_size);
 void naive_test_stats_print(NAIVE_CONST NaiveTestStats *stats);
 
 
@@ -35,45 +34,45 @@ typedef NaiveResult   NaiveTestProcessFunc(void *context, NaiveF32 **in, NaiveF3
 #define NAIVE_TEST_FAIL_DB_THRESH     -70.0f
 
 typedef struct {
-    NAIVE_CONST char          *inputs_dir;
-    NAIVE_CONST char          *outputs_dir;
-    NAIVE_CONST char          *refs_dir;
+    NAIVE_CONST char            *inputs_dir;
+    NAIVE_CONST char            *outputs_dir;
+    NAIVE_CONST char            *refs_dir;
     NAIVE_CONST NaiveTestDesc   *test_desc;
-    NaiveI32                  num_in_channels;
-    NaiveI32                  num_out_channels;
-    NaiveI32                  max_block_size;
-    NaiveTestSetUpFunc        *setup;
-    NaiveTestTearDownFunc     *teardown;
-    NaiveTestProcessFunc      *process;
-    void                    *context;
+    NaiveI32                    num_in_channels;
+    NaiveI32                    num_out_channels;
+    NaiveI32                    max_block_size;
+    NaiveTestSetUpFunc          *setup;
+    NaiveTestTearDownFunc       *teardown;
+    NaiveTestProcessFunc        *process;
+    void                        *context;
 
     // temporary buffers
-    char                    *in_fname;
-    char                    *out_fname;
-    char                    *ref_fname;
-    NaiveI16                  *in_i16;
-    NaiveI16                  *out_i16;
-    NaiveI16                  *ref_i16;
-    NaiveF32                  **in_f32;
-    NaiveF32                  **out_f32;
-    NaiveF32                  **ref_f32;
-    NaiveTestStats            *stats;
+    char                        *in_fname;
+    char                        *out_fname;
+    char                        *ref_fname;
+    NaiveI16                    *in_i16;
+    NaiveI16                    *out_i16;
+    NaiveI16                    *ref_i16;
+    NaiveF32                    **in_f32;
+    NaiveF32                    **out_f32;
+    NaiveF32                    **ref_f32;
+    NaiveTestStats              *stats;
 } NaiveTest;
 
 NaiveResult naive_test_init(NaiveTest *self,
-                        NaiveAllocFunc alloc,
-                        void *allocator,
-                        NAIVE_CONST NaiveTestDesc *test_desc,
-                        NAIVE_CONST char *inputs_dir,
-                        NAIVE_CONST char *outputs_dir,
-                        NAIVE_CONST char *refs_dir,
-                        NaiveI32 num_in_channels,
-                        NaiveI32 num_out_channels,
-                        NaiveI32 max_block_size,
-                        NaiveTestSetUpFunc *setup,
-                        NaiveTestTearDownFunc *teardown,
-                        NaiveTestProcessFunc *process,
-                        void *context);
+                            NaiveAllocFunc alloc,
+                            void *allocator,
+                            NAIVE_CONST NaiveTestDesc *test_desc,
+                            NAIVE_CONST char *inputs_dir,
+                            NAIVE_CONST char *outputs_dir,
+                            NAIVE_CONST char *refs_dir,
+                            NaiveI32 num_in_channels,
+                            NaiveI32 num_out_channels,
+                            NaiveI32 max_block_size,
+                            NaiveTestSetUpFunc *setup,
+                            NaiveTestTearDownFunc *teardown,
+                            NaiveTestProcessFunc *process,
+                            void *context);
 
 NaiveResult naive_test_run(NaiveTest *test);
 

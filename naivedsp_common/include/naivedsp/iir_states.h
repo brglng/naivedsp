@@ -5,12 +5,14 @@
 extern "C" {
 #endif
 
-#include "naivedsp/typedefs.h"
+#include "naivedsp/math_types.h"
 
 typedef struct {
     NaiveF32  s0;
     NaiveF32  s1;
 } NaiveIir1stDf1States;
+
+void naive_iir_1st_df1_states_init(NaiveIir1stDf1States *self);
 
 typedef struct {
     NaiveF32  s0;
@@ -19,11 +21,7 @@ typedef struct {
     NaiveF32  s3;
 } NaiveIir2ndDf1States;
 
-typedef struct {
-    NaiveI32              num_sos_cap;
-    NaiveIir1stDf1States  *fos_states;
-    NaiveIir2ndDf1States  *sos_states;
-} NaiveIirDf1States;
+void naive_iir_2nd_df1_states_init(NaiveIir2ndDf1States *self);
 
 #ifdef __cplusplus
 }

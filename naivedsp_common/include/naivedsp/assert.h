@@ -17,20 +17,6 @@ extern "C" {
 
 #else
 
-#if NAIVE_ADSP21489
-
-#define _NAIVE_ASSERT0(condition) do {  \
-    int c = condition;                  \
-    assert(c);                          \
-} while (0)
-
-#define _NAIVE_ASSERT1(condition, msg, ...) do {    \
-    int c = condition;                              \
-    assert(c);                                      \
-} while (0)
-
-#else
-
 #define _NAIVE_ASSERT0(condition)                                       \
     do {                                                                \
         int c = condition;                                              \
@@ -50,8 +36,6 @@ extern "C" {
       }                                                                                 \
       assert(c);                                                                        \
     } while (0)
-
-#endif
 
 #endif
 

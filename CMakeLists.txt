@@ -1,56 +1,108 @@
-cmake_minimum_required(VERSION 3.5)
-
+cmake_minimum_required(VERSION 3.14)
+if(POLICY CMP0025)
+  cmake_policy(SET CMP0025 NEW)
+endif()
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
 endif()
-
-if(POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW)
-endif()
-
 if(POLICY CMP0054)
   cmake_policy(SET CMP0054 NEW)
 endif()
+if(POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+endif()
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
-list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/cmake/Modules")
-
-include(naivedspProjectPre)
-
+# Project Information
 project(naivedsp C)
-set(${PROJECT_NAME}_VERSION_MAJOR 0)
-set(PROJECT_VERSION_MAJOR ${${PROJECT_NAME}_VERSION_MAJOR})
-set(${PROJECT_NAME}_VERSION_MINOR 1)
-set(PROJECT_VERSION_MINOR ${${PROJECT_NAME}_VERSION_MINOR})
-set(${PROJECT_NAME}_VERSION_PATCH 0)
-set(PROJECT_VERSION_PATCH ${${PROJECT_NAME}_VERSION_PATCH})
-set(${PROJECT_NAME}_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-set(PROJECT_VERSION ${${PROJECT_NAME}_VERSION})
+set(PROJECT_VERSION_MAJOR 0)
+set(PROJECT_VERSION_MINOR 1)
+set(PROJECT_VERSION_PATCH 0)
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
+set(${PROJECT_NAME}_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(${PROJECT_NAME}_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(${PROJECT_NAME}_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(${PROJECG_NAME}_VERSION ${PROJECT_VERSION})
 
-include(naivedspProjectPost)
+# CMake variables that affects building
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+  endif()
 
+  if(NOT DEFINED BUILD_SHARED_LIBS)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "enable building of shared libraries instead of static ones" FORCE)
+  endif()
+
+  if(NOT DEFINED CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "enable position independent code" FORCE)
+  endif()
+endif()
+
+# Custom build options
+option(NAIVEDSP_ENABLE_OPT_CODE "enable platform optimized code" ON)
+option(NAIVEDSP_DOWNLOAD_DIR "dependency download directory" "${CMAKE_BINARY_DIR}/deps/download")
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  include(CTest)
+  message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+  message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
+  message(STATUS "CMAKE_POSITION_INDEPENDENT_CODE: ${CMAKE_POSITION_INDEPENDENT_CODE}")
+  message(STATUS "BUILD_SHARED_LIBS: ${BUILD_SHARED_LIBS}")
+  message(STATUS "BUILD_TESTING: ${BUILD_TESTING}")
+endif()
+
+message(STATUS "NAIVEDSP_ENABLE_OPT_CODE: ${NAIVEDSP_ENABLE_OPT_CODE}")
+message(STATUS "NAIVEDSP_DOWNLOAD_DIR: ${NAIVEDSP_DOWNLOAD_DIR}")
+
+set(naivedsp_full_configuration "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=${CMAKE_POSITION_INDEPENDENT_CODE} -DNAIVEDSP_ENABLE_OPT_CODE=${NAIVEDSP_ENABLE_OPT_CODE}")
+
+include(GNUInstallDirs)
+include(audfpTargetProperties)
+
+add_subdirectory(deps)
 add_subdirectory(naivedsp_common)
-add_subdirectory(naivedsp_common_design)
-add_subdirectory(naive_peq)
-add_subdirectory(naive_peq_design)
-add_subdirectory(naive_geq)
-add_subdirectory(naive_geq_design)
-add_subdirectory(naive_delay)
-add_subdirectory(naive_stereo_delay)
-add_subdirectory(naive_reverb)
-add_subdirectory(naive_reverb_design)
-add_subdirectory(naive_test)
+# add_subdirectory(naive_peq)
+# add_subdirectory(naive_linkwitz_riley_geq)
+# add_subdirectory(naive_cascading_geq)
+# add_subdirectory(naive_fir_geq)
+# add_subdirectory(naive_delay)
+# add_subdirectory(naive_stereo_delay)
+# add_subdirectory(naive_fdn_reverb)
 
-add_library(naivedsp STATIC
-  $<TARGET_OBJECTS:naivedsp-common>
-  $<TARGET_OBJECTS:naive-delay>
-  $<TARGET_OBJECTS:naive-peq>
-  $<TARGET_OBJECTS:naive-geq>
-  $<TARGET_OBJECTS:naive-stereo-delay>
-  $<TARGET_OBJECTS:naive-reverb>
-  )
+if(BUILD_TESTING)
+  add_subdirectory(naive_test)
+endif()
 
-add_library(naivedsp STATIC
-  $<TARGET_OBJECTS:naive-peq-design>
-  $<TARGET_OBJECTS:naive-geq-design>
-  $<TARGET_OBJECTS:naive-reverb-design>
-  )
+export(PACKAGE naivedsp)
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  # Install README and CHANGELOG
+  install(
+    FILES README.md CHANGELOG.md
+    DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    )
+  
+  install(EXPORT naivedspTargets
+    FILE naivedspTargets.cmake
+    NAMESPACE naivedsp::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+  
+  include(CMakePackageConfigHelpers)
+  write_basic_package_version_file(
+    naivedspConfigVersion.cmake
+    VERSION ${PACKAGE_VERSION}
+    COMPATIBILITY SameMajorVersion
+    )
+  
+  configure_file(cmake/naivedspConfig.cmake.in naivedspConfig.cmake @ONLY)
+  install(
+    FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfig.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfigVersion.cmake"
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+  
+  include(naivedspCPackConfig)
+endif()

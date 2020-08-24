@@ -7,9 +7,10 @@ extern "C" {
 
 #include "naivedsp/assert.h"
 #include "naivedsp/delay_buf_def.h"
+#include "naivedsp/err.h"
 #include "naivedsp/memory.h"
 
-NaiveResult naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void *allocator, NaiveI32 size);
+NaiveErr naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void *allocator, NaiveI32 size);
 
 NAIVE_INLINE void naive_delay_buf_reset(NaiveDelayBuf *self) {
     self->pos = 0;

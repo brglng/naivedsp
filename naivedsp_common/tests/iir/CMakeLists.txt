@@ -1,21 +1,22 @@
 add_executable(naive-iir-test
   main.c
   test_desc.c
-  $<TARGET_OBJECTS:naivedsp-common>
-  $<TARGET_OBJECTS:naivedsp-common-design>
-  $<TARGET_OBJECTS:naive-test>
   )
 
-target_include_directories(naive-iir-test PUBLIC
-  ../../include
-  ../../../naive_common_design/include
-  ../../../naive_test/include
+target_compile_features(naivedsp PRIVATE ${naivedsp_compile_features})
+
+target_compile_definitions(naivedsp PRIVATE
+  ${naivedsp_compile_definitions}
+  ${naivedsp_test_compile_definitions}
   )
 
-target_compile_definitions(naive-iir-test PRIVATE
-  NAIVE_TEST_REFS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/refs"
+target_compile_options(naivedsp PRIVATE
+  ${naivedsp_c_flags}
+  $<$<CONFIG:RELEASE>:${naivedsp_compile_options_release}>
+  $<$<CONFIG:RELWITHDEBINFO>:${naivedsp_compile_options_release}>
   )
 
-if (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang"))
-  target_link_libraries(naive-iir-test m)
-endif()
+target_link_libraries(naivedsp
+  naivedsp-common
+  naive-test
+  ${naivedsp_link_libraries})

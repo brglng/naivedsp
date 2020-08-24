@@ -8,29 +8,44 @@ extern "C" {
 #include "naivedsp/memory.h"
 #include "naivedsp/iir_coeffs.h"
 #include "naivedsp/iir_states.h"
-#include "naivedsp/typedefs.h"
+#include "naivedsp/math_types.h"
 
-void naive_iir_1st_df1_states_init(NaiveIir1stDf1States *self);
 void naive_iir_1st_df1_process(NaiveIir1stDf1States *states, NAIVE_CONST NaiveIir1stCoeffs *params, NaiveF32 *data, NaiveI32 block_size);
 void naive_iir_1st_df1_reset(NaiveIir1stDf1States *self);
 
-void naive_iir_2nd_df1_states_init(NaiveIir2ndDf1States *self);
 void naive_iir_2nd_df1_process(NaiveIir2ndDf1States *states, NAIVE_CONST NaiveIir2ndCoeffs *params, NaiveF32 *data, NaiveI32 block_size);
 void naive_iir_2nd_df1_reset(NaiveIir2ndDf1States *self);
 
-#if NAIVE_ADSP21489
-#define NAIVE_IIR_SCRATCH_SIZE(block_size) (sizeof(NaiveF32) * (block_size))
-#else
-#define NAIVE_IIR_SCRATCH_SIZE(block_size) 0
-#endif
+NAIVE_INLINE NaiveI32 naive_iir_calc_num_sos(NaiveI32 order) {
+    return order / 2;
+}
 
-NaiveResult naive_iir_df1_states_init(NaiveIirDf1States *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 num_sos_limit);
+NAIVE_INLINE NaiveBool naive_iir_calc_has_fos(NaiveI32 order) {
+    return (order - (order / 2) * 2) == 1 ? NAIVE_TRUE : NAIVE_FALSE;
+}
 
-void naive_iir_df1_process(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs *coeffs, NaiveF32 *inout, NaiveI32 len, void *scratch);
+typedef struct {
+    NaiveI32                num_sos_cap;
+    NaiveBool               has_fos;
+    NaiveI32                num_sos;
+    NaiveIir1stCoeffs       *fos_coeffs;
+    NaiveIir2ndCoeffs       *sos_coeffs;
+    NaiveIir1stDf1States    *fos_states;
+    NaiveIir2ndDf1States    *sos_states;
+    NaiveF32                gain;
+} NaiveIirDf1;
 
-void naive_iir_df1_reset(NaiveIirDf1States *states, NAIVE_CONST NaiveIirCoeffs *coeffs);
+NaiveErr naive_iir_df1_init(NaiveIirDf1 *self, NaiveAllocFunc alloc, void *alloc_context, NaiveI32 num_sos_limit);
 
-NaiveResult naive_iir_df1_set_coeffs(NaiveIirDf1States *states, NaiveIirCoeffs *coeffs, NAIVE_CONST NaiveIirCoeffs *from);
+void naive_iir_df1_process(NaiveIirDf1 *self, NaiveF32 *inout, NaiveI32 len);
+
+void naive_iir_df1_reset(NaiveIirDf1 *self);
+
+void naive_iir_df1_set_default_params(NaiveIirDf1 *self);
+NaiveErr naive_iir_df1_set_butterworth_lowpass(NaiveIirDf1 *self, NaiveI32 order, NaiveI32 sample_rate, NaiveF32 freq);
+NaiveErr naive_iir_df1_set_butterworth_highpass(NaiveIirDf1 *self, NaiveI32 order, NaiveI32 sample_rate, NaiveF32 freq);
+NaiveErr naive_iir_df1_set_4th_linkwitz_riley_lowpass(NaiveIirDf1 *self, NaiveI32 sample_rate, NaiveF32 freq);
+NaiveErr naive_iir_df1_set_4th_linkwitz_riley_highpass(NaiveIirDf1 *self, NaiveI32 sample_rate, NaiveF32 freq);
 
 #ifdef __cplusplus
 }

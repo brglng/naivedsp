@@ -5,8 +5,9 @@
 extern "C" {
 #endif
 
+#include "naivedsp/err.h"
 #include "naivedsp/platdefs.h"
-#include "naivedsp/typedefs.h"
+#include "naivedsp/math_types.h"
 
 #ifdef __cplusplus
 #define NAIVE_ALIGNOF(type) alignof(type)
@@ -39,7 +40,7 @@ typedef struct _NaiveDefaultAllocator {
     void        **blocks;
 } NaiveDefaultAllocator;
 
-void naive_default_allocator_init(NaiveDefaultAllocator *self);
+NaiveErr naive_default_allocator_init(NaiveDefaultAllocator *self);
 void naive_default_allocator_finalize(NaiveDefaultAllocator *self);
 
 NAIVE_ATTRIBUTE_MALLOC void *naive_default_alloc(void *allocator, NaiveMemType type, NaiveUSize alignment, NaiveUSize size);

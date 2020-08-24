@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "naivedsp/typedefs.h"
+#include "naivedsp/math_types.h"
 
 typedef struct {
     NaiveF32  *buf;
