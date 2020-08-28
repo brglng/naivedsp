@@ -6,15 +6,15 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include "toml.h"
 #include "naivedsp/assert.h"
+#include "naivedsp/math_types.h"
 #include "naivedsp/memory.h"
-#include "naivedsp/typedefs.h"
-#include "naivedsp/test_desc.h"
 
 typedef struct {
-  NaiveI32    num_samples;
-  NaiveF32    max_diff;
-  NaiveI32    max_diff_idx;
+    NaiveI32    num_samples;
+    NaiveF32    max_diff;
+    NaiveI32    max_diff_idx;
 } NaiveTestStats;
 
 #define NAIVE_TEST_STATS_INIT {0, 0, 0}
@@ -23,21 +23,19 @@ void naive_test_stats_update(NaiveTestStats *stats, NaiveF32 *out, NaiveF32 *ref
 void naive_test_stats_print(NAIVE_CONST NaiveTestStats *stats);
 
 
-typedef NaiveResult   NaiveTestSetUpFunc(void *context,
-                                     const NaiveTestCaseDesc *case_desc,
-                                     NaiveI32 sample_rate);
+typedef NaiveErr    NaiveTestSetUpFunc(void *context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate);
 typedef void        NaiveTestTearDownFunc(void *context);
-typedef NaiveResult   NaiveTestProcessFunc(void *context, NaiveF32 **in, NaiveF32 **out,
-                                       NaiveI32 block_size);
+typedef NaiveErr    NaiveTestProcessFunc(void *context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size);
 
 #define NAIVE_TEST_FILENAME_MAX       511
 #define NAIVE_TEST_FAIL_DB_THRESH     -70.0f
 
 typedef struct {
+    NAIVE_CONST char            *config_file;
     NAIVE_CONST char            *inputs_dir;
     NAIVE_CONST char            *outputs_dir;
     NAIVE_CONST char            *refs_dir;
-    NAIVE_CONST NaiveTestDesc   *test_desc;
+    TomlTable                   *config;
     NaiveI32                    num_in_channels;
     NaiveI32                    num_out_channels;
     NaiveI32                    max_block_size;
@@ -59,22 +57,22 @@ typedef struct {
     NaiveTestStats              *stats;
 } NaiveTest;
 
-NaiveResult naive_test_init(NaiveTest *self,
-                            NaiveAllocFunc alloc,
-                            void *allocator,
-                            NAIVE_CONST NaiveTestDesc *test_desc,
-                            NAIVE_CONST char *inputs_dir,
-                            NAIVE_CONST char *outputs_dir,
-                            NAIVE_CONST char *refs_dir,
-                            NaiveI32 num_in_channels,
-                            NaiveI32 num_out_channels,
-                            NaiveI32 max_block_size,
-                            NaiveTestSetUpFunc *setup,
-                            NaiveTestTearDownFunc *teardown,
-                            NaiveTestProcessFunc *process,
-                            void *context);
+NaiveErr naive_test_init(NaiveTest *self,
+                         NaiveAllocFunc alloc,
+                         void *alloc_context,
+                         NAIVE_CONST char *config_file,
+                         NAIVE_CONST char *inputs_dir,
+                         NAIVE_CONST char *outputs_dir,
+                         NAIVE_CONST char *refs_dir,
+                         NaiveI32 num_in_channels,
+                         NaiveI32 num_out_channels,
+                         NaiveI32 max_block_size,
+                         NaiveTestSetUpFunc *setup,
+                         NaiveTestTearDownFunc *teardown,
+                         NaiveTestProcessFunc *process,
+                         void *context);
 
-NaiveResult naive_test_run(NaiveTest *test);
+NaiveI32 naive_test_run(NaiveTest *test);
 
 #ifdef __cplusplus
 }

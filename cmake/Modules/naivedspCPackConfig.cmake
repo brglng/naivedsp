@@ -1,8 +1,0 @@
-set(CPACK_PACKAGE_NAME "naivedsp")
-set(CPACK_GENERATOR "TXZ")
-set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/;\\\\.git.*;/build/;/backup/;/cmake-build-.*/;/\\\\.idea/;/\\\\.ycm_extra_conf\\\\..*;/GPATH$;/GRTAGS$;/GSYMS$;/GTAGS$;\\\\.swp$;\\\\.swo$;.DS_Store;.ccls;.ccls-cache")
-set(CPACK_SOURCE_GENERATOR "TXZ")
-include(CPack)

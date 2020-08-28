@@ -11,8 +11,6 @@ add_library(naivedsp-common
 
 set_property(TARGET naivedsp-common PROPERTY EXPORT_NAME common)
 set_property(TARGET naivedsp-common PROPERTY OUTPUT_NAME naivedsp-common)
-set_property(TARGET naivedsp-common PROPERTY DEBUG_POSTFIX ${naivedsp_debug_postfix})
-set_property(TARGET naivedsp-common PROPERTY RELWITHDEBINFO_POSTFIX ${naivedsp_relwithdebinfo_postfix})
 set_property(TARGET naivedsp-common PROPERTY INSTALL_RPATH
   "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}"
   "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}"
@@ -21,7 +19,9 @@ set_property(TARGET naivedsp-common PROPERTY INSTALL_RPATH
 ## Building Rules
 target_compile_features(naivedsp-common PRIVATE ${naivedsp_compile_features})
 
-target_compile_definitions(naivedsp-common PRIVATE ${naivedsp_compile_definitions})
+target_compile_definitions(naivedsp-common PRIVATE 
+  ${naivedsp_compile_definitions}
+  )
 
 target_compile_options(naivedsp-common PRIVATE
   ${naivedsp_c_flags}
@@ -39,10 +39,11 @@ target_include_directories(naivedsp-common
 
 target_link_libraries(naivedsp-common
   PUBLIC
-  $<$<PLATFORM_ID:Linux>:m>
+    $<$<PLATFORM_ID:Linux>:m>
   )
 
-export(TARGETS lib${PROJECT_NAME}-storage NAMESPACE audfp FILE audfpTargets.cmake)
+add_library(naivedsp::common ALIAS naivedsp-common)
+export(TARGETS naivedsp-common NAMESPACE naivedsp FILE naivedspTargets.cmake)
 
 install(
   TARGETS naivedsp-common

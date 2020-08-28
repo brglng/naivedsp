@@ -22,7 +22,7 @@ set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT
 set(${PROJECT_NAME}_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(${PROJECT_NAME}_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(${PROJECT_NAME}_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-set(${PROJECG_NAME}_VERSION ${PROJECT_VERSION})
+set(${PROJECT_NAME}_VERSION ${PROJECT_VERSION})
 
 # CMake variables that affects building
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
@@ -41,7 +41,6 @@ endif()
 
 # Custom build options
 option(NAIVEDSP_ENABLE_OPT_CODE "enable platform optimized code" ON)
-option(NAIVEDSP_DOWNLOAD_DIR "dependency download directory" "${CMAKE_BINARY_DIR}/deps/download")
 
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   include(CTest)
@@ -53,12 +52,11 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
 endif()
 
 message(STATUS "NAIVEDSP_ENABLE_OPT_CODE: ${NAIVEDSP_ENABLE_OPT_CODE}")
-message(STATUS "NAIVEDSP_DOWNLOAD_DIR: ${NAIVEDSP_DOWNLOAD_DIR}")
 
 set(naivedsp_full_configuration "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_POSITION_INDEPENDENT_CODE=${CMAKE_POSITION_INDEPENDENT_CODE} -DNAIVEDSP_ENABLE_OPT_CODE=${NAIVEDSP_ENABLE_OPT_CODE}")
 
 include(GNUInstallDirs)
-include(audfpTargetProperties)
+include(naivedspTargetProperties)
 
 add_subdirectory(deps)
 add_subdirectory(naivedsp_common)
@@ -69,10 +67,7 @@ add_subdirectory(naivedsp_common)
 # add_subdirectory(naive_delay)
 # add_subdirectory(naive_stereo_delay)
 # add_subdirectory(naive_fdn_reverb)
-
-if(BUILD_TESTING)
-  add_subdirectory(naive_test)
-endif()
+add_subdirectory(naive_test)
 
 export(PACKAGE naivedsp)
 
@@ -104,5 +99,12 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
     )
   
-  include(naivedspCPackConfig)
+  set(CPACK_PACKAGE_NAME "naivedsp")
+  set(CPACK_GENERATOR "TXZ")
+  set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+  set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+  set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+  set(CPACK_SOURCE_IGNORE_FILES "/\\\\.git/;\\\\.git.*;/build/;/backup/;/cmake-build-.*/;/\\\\.idea/;/\\\\.ycm_extra_conf\\\\..*;/GPATH$;/GRTAGS$;/GSYMS$;/GTAGS$;\\\\.swp$;\\\\.swo$;.DS_Store;.ccls;.ccls-cache")
+  set(CPACK_SOURCE_GENERATOR "TXZ")
+  include(CPack)
 endif()

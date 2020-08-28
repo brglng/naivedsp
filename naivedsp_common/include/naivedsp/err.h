@@ -10,6 +10,7 @@ typedef enum {
     NAIVE_ERR,
     NAIVE_ERR_NOMEM,
     NAIVE_ERR_INVALID_PARAMETER,
+    NAIVE_ERR_CODES_COUNT,
 } NaiveErr;
 
 #ifdef __cplusplus

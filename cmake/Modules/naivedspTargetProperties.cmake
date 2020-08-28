@@ -14,11 +14,6 @@ else()
   list(APPEND naivedsp_compile_definitions NAIVE_ENABLE_OPT_CODE=0)
 endif()
 
-set(naivedsp_test_compile_definitions
-  NAIVE_TEST_WORKING_DIR="${PROJECT_BINARY_DIR}"
-  NAIVE_TEST_INPUTS_DIR="${PROJECT_SOURCE_DIR}/naive_test/inputs/"
-  )
-
 set(naivedsp_c_flags "")
 include(CheckCCompilerFlag)
 if(${CMAKE_C_COMPILER_ID} STREQUAL "MSVC")
@@ -37,7 +32,6 @@ elseif(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|.*Clang)$")
                -Wshadow
                -Wuninitialized
                -Wwrite-strings
-               -Werror=c++11-compat
                -Werror=discarded-qualifiers
                -Werror=ignored-qualifiers
                -Werror=implicit
@@ -56,6 +50,3 @@ elseif(${CMAKE_C_COMPILER_ID} MATCHES "^(GNU|.*Clang)$")
 endif()
 
 set(naivedsp_compile_options_release -fomit-frame-pointer -march=native -mtune=native)
-
-set(naivedsp_debug_postfix "-debug")
-set(naivedsp_relwithdebinfo_postfix "-relwithdebinfo")
