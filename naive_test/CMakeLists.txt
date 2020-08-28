@@ -36,6 +36,7 @@ target_link_libraries(naive-test
   PUBLIC
     $<BUILD_INTERFACE:naivedsp-common>
     toml::toml
+    wav::wav
     $<$<PLATFORM_ID:Linux>:m>
   )
 
