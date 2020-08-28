@@ -74,7 +74,7 @@ export(PACKAGE naivedsp)
 # Install README and CHANGELOG
 install(
   FILES README.md CHANGELOG.md
-  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/doc/${PROJECT_NAME}
   )
 
 install(EXPORT naivedspTargets
