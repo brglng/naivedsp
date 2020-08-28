@@ -71,34 +71,34 @@ add_subdirectory(naive_test)
 
 export(PACKAGE naivedsp)
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  # Install README and CHANGELOG
-  install(
-    FILES README.md CHANGELOG.md
-    DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    )
-  
-  install(EXPORT naivedspTargets
-    FILE naivedspTargets.cmake
-    NAMESPACE naivedsp::
+# Install README and CHANGELOG
+install(
+  FILES README.md CHANGELOG.md
+  DESTINATION ${CMAKE_INSTALL_DOCDIR}
+  )
+
+install(EXPORT naivedspTargets
+  FILE naivedspTargets.cmake
+  NAMESPACE naivedsp::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  naivedspConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+configure_file(cmake/naivedspConfig.cmake.in naivedspConfig.cmake @ONLY)
+install(
+  FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
+  )
   
-  include(CMakePackageConfigHelpers)
-  write_basic_package_version_file(
-    naivedspConfigVersion.cmake
-    VERSION ${PACKAGE_VERSION}
-    COMPATIBILITY SameMajorVersion
-    )
-  
-  configure_file(cmake/naivedspConfig.cmake.in naivedspConfig.cmake @ONLY)
-  install(
-    FILES
-      "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfig.cmake"
-      "${CMAKE_CURRENT_BINARY_DIR}/naivedspConfigVersion.cmake"
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-  
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   set(CPACK_PACKAGE_NAME "naivedsp")
   set(CPACK_GENERATOR "TXZ")
   set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
