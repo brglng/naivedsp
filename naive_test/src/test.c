@@ -29,6 +29,8 @@ NaiveErr naive_test_init(NaiveTest *self,
     self->refs_dir = refs_dir;
     self->config = NULL;
     self->block_size_cap = block_size_cap;
+    self->num_in_channels_cap = num_in_channels_cap;
+    self->num_out_channels_cap = num_out_channels_cap;
     self->setup = setup;
     self->teardown = teardown;
     self->process = process;
@@ -36,7 +38,7 @@ NaiveErr naive_test_init(NaiveTest *self,
 
     self->config = toml_load_filename(config_file);
     if (toml_err()->code != TOML_OK) {
-        fprintf(stderr, "Failed to read config file %s: %s [libtoml error %d]\n", config_file, toml_err()->message, toml_err()->code);
+        fprintf(stderr, "Failed to read config file %s [libtoml error %d: %s]\n", config_file, toml_err()->code, toml_err()->message);
         return NAIVE_ERR;
     }
 
@@ -136,8 +138,9 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
         if (!failed) {
             num_out_channels = (NaiveI32)toml_table_get_as_integer(case_config, "out-channels");
-            if (num_out_channels > test->num_in_channels_cap) {
+            if (num_out_channels > test->num_out_channels_cap) {
                 fprintf(stderr, "test %d: out-channels is too large\n", i);
+                failed = NAIVE_TRUE;
             }
         }
 
@@ -168,7 +171,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
             strcat(test->out_fname, case_out_fname);
 
             if (strlen(test->refs_dir) + 1 + strlen(case_out_fname) > NAIVE_TEST_FILENAME_MAX) {
-                fprintf(stderr, "test %d: output filename is too long\n", i);
+                fprintf(stderr, "test %d: ref filename is too long\n", i);
                 failed = NAIVE_TRUE;
             }
         }
@@ -181,11 +184,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
             fin = wav_open(test->in_fname, "rb");
             if (wav_error(fin)) {
-                if (wav_errno() == WAV_ERR_OS) {
-                    fprintf(stderr, "test %d: could not open %s: %s [OS error %d]\n", i, test->in_fname, strerror(errno), errno);
-                } else {
-                    fprintf(stderr, "test %d: could not open %s: [libwav error %d]\n", i, test->in_fname, wav_errno());
-                }
+                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->in_fname, wav_errno(), wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -196,12 +195,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
             sample_rate = (NaiveI32)wav_get_sample_rate(fin);
             num_in_channels = (NaiveI32)wav_get_num_channels(fin);
             fout = wav_open(test->out_fname, "wb");
-            if (wav_error(fin)) {
-                if (wav_errno() == WAV_ERR_OS) {
-                    fprintf(stderr, "test %d: could not open %s: %s [OS error %d]\n", i, test->out_fname, strerror(errno), errno);
-                } else {
-                    fprintf(stderr, "test %d: could not open %s: [libwav error %d]\n", i, test->out_fname, wav_errno());
-                }
+            if (wav_error(fout)) {
+                fprintf(stderr, "test %d: could not open %s: [libwav error %d: %s]\n", i, test->out_fname, wav_errno(), wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -209,11 +204,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             wav_set_sample_rate(fout, (NaiveU32)sample_rate);
             if (wav_error(fout)) {
-                if (wav_errno() == WAV_ERR_OS) {
-                    fprintf(stderr, "test %d: could not open %s: %s [OS error %d]\n", i, test->out_fname, strerror(errno), errno);
-                } else {
-                    fprintf(stderr, "test %d: could not open %s: [libwav error %d]\n", i, test->out_fname, wav_errno());
-                }
+                fprintf(stderr, "test %d: wav_set_sample_rate() failed: [libwav error %d: %s]\n", i, wav_errno(), wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -221,11 +212,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             wav_set_num_channels(fout, (NaiveU16)num_out_channels);
             if (wav_error(fout)) {
-                if (wav_errno() == WAV_ERR_OS) {
-                    fprintf(stderr, "test %d: could not open %s: %s [OS error %d]\n", i, test->out_fname, strerror(errno), errno);
-                } else {
-                    fprintf(stderr, "test %d: could not open %s: [libwav error %d]\n", i, test->out_fname, wav_errno());
-                }
+                fprintf(stderr, "test %d: wav_set_num_channels() failed: [libwav error %d: %s]\n", i, wav_errno(), wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -234,11 +221,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             fref = wav_open(test->ref_fname, "rb");
             if (wav_error(fref)) {
-                if (wav_errno() == WAV_ERR_OS && errno != EEXIST) {
-                    fprintf(stderr, "test %d: could not open %s: %s [OS error %d]\n", i, test->ref_fname, strerror(errno), errno);
-                } else {
-                    fprintf(stderr, "test %d: could not open %s: [libwav error %d]\n", i, test->ref_fname, wav_errno());
-                }
+                fprintf(stderr, "test %d: could not open %s: [libwav error %d: %s]\n", i, test->ref_fname, wav_errno(), wav_err()->message);
                 wav_close(fref);
                 fref = NULL;
                 wav_err_clear();
@@ -281,20 +264,25 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
         while (!failed) {
             NaiveI32 real_block_size = (NaiveI32)wav_read(fin, test->in_i16, (size_t)block_size);
-
-            naive_i16_q15_interleaved_to_f32_planar(test->in_f32, test->in_i16, num_in_channels, real_block_size);
-
-            NaiveErr proc_err = test->process(test->context, test->in_f32, test->out_f32, real_block_size);
-            if (proc_err != NAIVE_OK) {
-                fprintf(stderr, "test %d: the process function returned %d\n", i, proc_err);
+            if (wav_errno()) {
+                fprintf(stderr, "test %d: failed to read %s: [libwav error %d: %s]\n", i, test->in_fname, wav_errno(), wav_err()->message);
                 failed = NAIVE_TRUE;
+            }
+
+            if (!failed) {
+                naive_i16_q15_interleaved_to_f32_planar(test->in_f32, test->in_i16, num_in_channels, real_block_size);
+                NaiveErr proc_err = test->process(test->context, test->in_f32, test->out_f32, real_block_size);
+                if (proc_err != NAIVE_OK) {
+                    fprintf(stderr, "test %d: the process function returned %d\n", i, proc_err);
+                    failed = NAIVE_TRUE;
+                }
             }
 
             if (!failed) {
                 naive_f32_planar_to_i16_q15_interleaved(test->out_i16, test->out_f32, num_out_channels, real_block_size);
                 wav_write(fout, test->out_i16, (size_t)real_block_size);
                 if (wav_error(fout)) {
-                    fprintf(stderr, "test %d: failed to write to %s: %s [errno %d]\n", i, test->out_fname, strerror(errno), errno);
+                    fprintf(stderr, "test %d: failed to write to %s [libwav error %d: %s]\n", i, test->out_fname, wav_errno(), wav_err()->message);
                     failed = NAIVE_TRUE;
                 }
             }
@@ -352,9 +340,13 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (fref) wav_close(fref);
         if (fout) wav_close(fout);
         if (fin) wav_close(fin);
+
+        wav_err_clear();
     }
 
     printf("total %zu tests, %d passed, %d failed\n", test->config->len, num_passed, num_failed);
+
+    toml_err_clear();
 
     return num_failed;
 }
