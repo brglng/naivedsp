@@ -36,9 +36,9 @@ typedef struct {
     NAIVE_CONST char            *outputs_dir;
     NAIVE_CONST char            *refs_dir;
     TomlTable                   *config;
-    NaiveI32                    num_in_channels;
-    NaiveI32                    num_out_channels;
-    NaiveI32                    max_block_size;
+    NaiveI32                    num_in_channels_cap;
+    NaiveI32                    num_out_channels_cap;
+    NaiveI32                    block_size_cap;
     NaiveTestSetUpFunc          *setup;
     NaiveTestTearDownFunc       *teardown;
     NaiveTestProcessFunc        *process;
@@ -64,9 +64,9 @@ NaiveErr naive_test_init(NaiveTest *self,
                          NAIVE_CONST char *inputs_dir,
                          NAIVE_CONST char *outputs_dir,
                          NAIVE_CONST char *refs_dir,
-                         NaiveI32 num_in_channels,
-                         NaiveI32 num_out_channels,
-                         NaiveI32 max_block_size,
+                         NaiveI32 num_in_channels_cap,
+                         NaiveI32 num_out_channels_cap,
+                         NaiveI32 block_size_cap,
                          NaiveTestSetUpFunc *setup,
                          NaiveTestTearDownFunc *teardown,
                          NaiveTestProcessFunc *process,

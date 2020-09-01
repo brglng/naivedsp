@@ -8,6 +8,7 @@ add_library(naivedsp-common
   src/math.c
   src/memory.c
   )
+add_library(naivedsp::common ALIAS naivedsp-common)
 
 set_property(TARGET naivedsp-common PROPERTY EXPORT_NAME common)
 set_property(TARGET naivedsp-common PROPERTY OUTPUT_NAME naivedsp-common)
@@ -42,7 +43,6 @@ target_link_libraries(naivedsp-common
     $<$<PLATFORM_ID:Linux>:m>
   )
 
-add_library(naivedsp::common ALIAS naivedsp-common)
 export(TARGETS naivedsp-common NAMESPACE naivedsp FILE naivedspTargets.cmake)
 
 install(

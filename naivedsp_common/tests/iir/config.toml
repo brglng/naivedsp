@@ -1,25 +1,28 @@
 [iir-1st-order-lowpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-1st-lowpass-44k-freq-10000.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-1st-lowpass-44k-freq-10000.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 1
 type = "lowpass"
 freq = 10000.0
 
 [iir-1st-order-highpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-1st-allpass-44k-freq-500.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-1st-allpass-44k-freq-500.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 1
 type = "allpass"
 freq = 100.0
 
 [iir-2nd-order-lowpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-lowpass-44k-freq-10000-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-lowpass-44k-freq-10000-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "lowpass"
@@ -27,9 +30,10 @@ freq = 10000.0
 q = 0.7
 
 [iir-2nd-order-bandpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-bandpass-44k-freq-500-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-bandpass-44k-freq-500-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "bandpass"
@@ -37,9 +41,10 @@ freq = 500.0
 q = 0.7
 
 [iir-2nd-order-bandstop]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-bandstop-44k-freq-500-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-bandstop-44k-freq-500-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "bandstop"
@@ -47,9 +52,10 @@ freq = 500.0
 q = 0.7
 
 [iir-2nd-order-allpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-allpass-44k-freq-500-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-allpass-44k-freq-500-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "allpass"
@@ -57,9 +63,10 @@ freq = 500.0
 q = 0.7
 
 [iir-2nd-order-low-shelf-boost]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-low-shelf-44k-freq-200-q-0.7-gain-2.0.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-low-shelf-44k-freq-200-q-0.7-gain-2.0.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "low-shelf"
@@ -68,9 +75,10 @@ q = 0.7
 gain = 2.0
 
 [iir-2nd-order-low-shelf-cut]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-low-shelf-44k-freq-200-q-0.7-gain-0.5.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-low-shelf-44k-freq-200-q-0.7-gain-0.5.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "low-shelf"
@@ -79,9 +87,10 @@ q = 0.7
 gain = 0.5
 
 [iir-2nd-order-high-shelf-boost]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-high-shelf-44k-freq-5000-q-0.7-gain-2.0.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-high-shelf-44k-freq-5000-q-0.7-gain-2.0.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "high-shelf"
@@ -90,9 +99,10 @@ q = 0.7
 gain = 2.0
 
 [iir-2nd-order-high-shelf-cut]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-high-shelf-44k-freq-5000-q-0.7-gain-0.5.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-high-shelf-44k-freq-5000-q-0.7-gain-0.5.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "high-shelf"
@@ -101,9 +111,10 @@ q = 0.7
 gain = 0.5
 
 [iir-2nd-order-peak]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-peak-44k-freq-500-q-0.7-gain-2.0.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-peak-44k-freq-500-q-0.7-gain-2.0.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "peak"
@@ -112,36 +123,40 @@ q = 0.7
 gain = 2.0
 
 [iir-1st-order-butterworth-lowpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-1st-butterworth-lowpass-44k-freq-10000.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-1st-butterworth-lowpass-44k-freq-10000.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 1
 type = "butterworth-lowpass"
 freq = 10000.0
 
 [iir-2nd-order-butterworth-lowpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-butterworth-lowpass-44k-freq-10000.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-butterworth-lowpass-44k-freq-10000.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "butterworth-lowpass"
 freq = 10000.0
 
 [iir-2nd-order-butterworth-highpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-butterworth-highpass-44k-freq-100.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-butterworth-highpass-44k-freq-100.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "butterworth-highpass"
 freq = 100.0
 
 [iir-2nd-order-butterworth-bandpass]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-butterworth-bandpass-44k-freq-500-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-butterworth-bandpass-44k-freq-500-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "butterworth-bandpass"
@@ -149,9 +164,10 @@ freq = 500.0
 q = 0.7
 
 [iir-2nd-order-butterworth-bandstop]
-input = "Sweep_-15dBFS_44k_16bit_1ch.pcm"
-output = "iir-2nd-butterworth-bandstop-44k-freq-500-q-0.7.pcm"
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "iir-2nd-butterworth-bandstop-44k-freq-500-q-0.7.wav"
 sample-rate = 44100
+out-channels = 1
 block-size = 256
 order = 2
 type = "butterworth-bandstop"

@@ -1,6 +1,7 @@
 add_library(naive-test
   src/test.c
   )
+add_library(naivedsp::test ALIAS naive-test)
 
 set_property(TARGET naive-test PROPERTY EXPORT_NAME test)
 set_property(TARGET naive-test PROPERTY OUTPUT_NAME naive-test)
@@ -29,8 +30,6 @@ target_include_directories(naive-test PUBLIC
   PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   )
-
-add_library(naivedsp::test ALIAS naive-test)
 
 target_link_libraries(naive-test
   PUBLIC
