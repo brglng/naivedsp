@@ -5,21 +5,30 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
 #include "naivedsp/platdefs.h"
 #include "naivedsp/memory.h"
 #include "naivedsp/iir.h"
-#include "naivedsp/peq_coeffs.h"
-#include "naivedsp/peq_states.h"
 
-#define NAIVE_PEQ_SCRATCH_SIZE(block_size) NAIVE_IIR_SCRATCH_SIZE(block_size)
+typedef struct {
+    NaiveI32        num_bands_cap;
+    NaiveI32        num_bands;
+    NaiveIirDf1     *bands;
+} NaivePeq;
 
-NaiveResult naive_peq_states_init(NaivePeqStates *states, NaiveAllocFunc alloc, void *allocator, NaiveI32 num_bands_cap, NaiveU32 band_num_sos_cap);
+NaiveErr naive_peq_init(NaivePeq *self, void *alloc_context, NaiveAllocFunc alloc, NaiveI32 num_bands_cap, NaiveI32 band_num_sos_cap);
 
-void naive_peq_process(NaivePeqStates *states, NAIVE_CONST NaivePeqCoeffs *coeffs, NaiveF32 *inout, NaiveI32 len, void *scratch);
+void naive_peq_process(NaivePeq *self, NaiveF32 *inout, NaiveI32 len);
 
-void naive_peq_reset(NaivePeqStates *self, NAIVE_CONST NaivePeqCoeffs *coeffs);
+void naive_peq_reset(NaivePeq *self);
 
-NaiveResult naive_peq_set_coeffs(NaivePeqStates *states, NaivePeqCoeffs *coeffs, NAIVE_CONST NaivePeqCoeffs *from);
+void naive_peq_set_default_params(NaivePeq *self);
+
+NAIVE_INLINE NaiveIirDf1* naive_peq_get_band(NaivePeq *self, NaiveI32 index) {
+    if (index < 0 || index > self->num_bands)
+        return NULL;
+    return &self->bands[index];
+}
 
 #ifdef __cplusplus
 }

@@ -3,18 +3,18 @@
 #include "naivedsp/iir.h"
 #include "naivedsp/peq.h"
 
-NaiveResult naive_peq_states_init(NaivePeqStates *states, NaiveAllocFunc alloc, void *allocator, NaiveU32 max_bands, NaiveU32 max_band_sos)
+NaiveErr naive_peq_init(NaivePeq *self, void *alloc_context, NaiveAllocFunc alloc, NaiveI32 num_bands_cap, NaiveI32 band_num_sos_cap)
 {
-    int err = NAIVE_OK;
+    NaiveErr err = NAIVE_OK;
 
-    states->max_bands = max_bands;
-    states->band_states = alloc(allocator, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveIirDf1States), sizeof(NaiveIirDf1States) * max_bands);
-    if (!err && !states->band_states)
+    self->num_bands_cap = num_bands_cap;
+    self->bands = NAIVE_NEW(alloc_context, alloc, NAIVE_MEM_STATE, NaiveIirDf1, (NaiveUSize)num_bands_cap);
+    if (!err && !self->bands)
         err = NAIVE_ERR_NOMEM;
 
-    if (states->band_states) {
-        for (NaiveU32 i = 0; i < max_bands; ++i) {
-            int rc = naive_iir_df1_states_init(&states->band_states[i], alloc, allocator, max_band_sos);
+    if (self->bands) {
+        for (NaiveI32 i = 0; i < num_bands_cap; ++i) {
+            NaiveErr rc = naive_iir_df1_init(&self->bands[i], alloc_context, alloc, band_num_sos_cap);
             if (!err && rc)
                 err = rc;
         }
@@ -23,38 +23,23 @@ NaiveResult naive_peq_states_init(NaivePeqStates *states, NaiveAllocFunc alloc, 
     return err;
 }
 
-void naive_peq_process(NaivePeqStates *states, NAIVE_CONST NaivePeqCoeffs *coeffs, NaiveF32 *inout, NaiveU32 len, void *scratch)
+void naive_peq_process(NaivePeq *self, NaiveF32 *inout, NaiveI32 len)
 {
-    for (NaiveU32 i = 0; i < coeffs->num_bands; ++i) {
-        naive_iir_df1_process(&states->band_states[i], &coeffs->band_coeffs[i], inout, len, scratch);
+    for (NaiveI32 i = 0; i < self->num_bands; ++i) {
+        naive_iir_df1_process(&self->bands[i], inout, len);
     }
 }
 
-void naive_peq_reset(NaivePeqStates *states, NAIVE_CONST NaivePeqCoeffs *coeffs)
+void naive_peq_reset(NaivePeq *self)
 {
-    for (NaiveU32 i = 0; i < coeffs->num_bands; ++i) {
-        naive_iir_df1_reset(&states->band_states[i], &coeffs->band_coeffs[i]);
+    for (NaiveI32 i = 0; i < self->num_bands; ++i) {
+        naive_iir_df1_reset(&self->bands[i]);
     }
 }
 
-NaiveResult naive_peq_set_coeffs(NaivePeqStates *states, NaivePeqCoeffs *coeffs, NAIVE_CONST NaivePeqCoeffs *from)
+void naive_peq_set_default_params(NaivePeq *self)
 {
-    if (from->num_bands > states->max_bands)
-        return NAIVE_ERR_INVALID_PARAMETER;
-
-    int err = NAIVE_OK;
-
-    for (NaiveU32 i = 0; i < from->num_bands; ++i) {
-        err = naive_iir_df1_set_coeffs(&states->band_states[i], &coeffs->band_coeffs[i], &from->band_coeffs[i]);
-        if (err)
-            return err;
+    for (NaiveI32 i = 0; i < self->num_bands; ++i) {
+        naive_iir_df1_set_default_params(&self->bands[i]);
     }
-
-    for (NaiveU32 i = coeffs->num_bands; i < from->num_bands; ++i) {
-        naive_iir_df1_reset(&states->band_states[i], &coeffs->band_coeffs[i]);
-    }
-
-    coeffs->num_bands = from->num_bands;
-
-    return NAIVE_OK;
 }
