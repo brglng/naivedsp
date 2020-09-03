@@ -183,8 +183,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
             strcat(test->ref_fname, case_out_fname);
 
             fin = wav_open(test->in_fname, "rb");
-            if (wav_error(fin)) {
-                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->in_fname, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->in_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -195,24 +195,24 @@ NaiveI32 naive_test_run(NaiveTest *test)
             sample_rate = (NaiveI32)wav_get_sample_rate(fin);
             num_in_channels = (NaiveI32)wav_get_num_channels(fin);
             fout = wav_open(test->out_fname, "wb");
-            if (wav_error(fout)) {
-                fprintf(stderr, "test %d: could not open %s: [libwav error %d: %s]\n", i, test->out_fname, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->out_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
 
         if (!failed) {
             wav_set_sample_rate(fout, (NaiveU32)sample_rate);
-            if (wav_error(fout)) {
-                fprintf(stderr, "test %d: wav_set_sample_rate() failed: [libwav error %d: %s]\n", i, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: wav_set_sample_rate() failed [libwav error %d: %s]\n", i, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
 
         if (!failed) {
             wav_set_num_channels(fout, (NaiveU16)num_out_channels);
-            if (wav_error(fout)) {
-                fprintf(stderr, "test %d: wav_set_num_channels() failed: [libwav error %d: %s]\n", i, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: wav_set_num_channels() failed [libwav error %d: %s]\n", i, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -220,8 +220,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
         WavFile *fref = NULL;
         if (!failed) {
             fref = wav_open(test->ref_fname, "rb");
-            if (wav_error(fref)) {
-                fprintf(stderr, "test %d: could not open %s: [libwav error %d: %s]\n", i, test->ref_fname, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->ref_fname, wav_err()->code, wav_err()->message);
                 wav_close(fref);
                 fref = NULL;
                 wav_err_clear();
@@ -264,8 +264,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
         while (!failed) {
             NaiveI32 real_block_size = (NaiveI32)wav_read(fin, test->in_i16, (size_t)block_size);
-            if (wav_errno()) {
-                fprintf(stderr, "test %d: failed to read %s: [libwav error %d: %s]\n", i, test->in_fname, wav_errno(), wav_err()->message);
+            if (wav_err()->code != WAV_OK) {
+                fprintf(stderr, "test %d: failed to read %s [libwav error %d: %s]\n", i, test->in_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
 
@@ -281,8 +281,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
             if (!failed) {
                 naive_f32_planar_to_i16_q15_interleaved(test->out_i16, test->out_f32, num_out_channels, real_block_size);
                 wav_write(fout, test->out_i16, (size_t)real_block_size);
-                if (wav_error(fout)) {
-                    fprintf(stderr, "test %d: failed to write to %s [libwav error %d: %s]\n", i, test->out_fname, wav_errno(), wav_err()->message);
+                if (wav_err()->code != WAV_OK) {
+                    fprintf(stderr, "test %d: failed to write to %s [libwav error %d: %s]\n", i, test->out_fname, wav_err()->code, wav_err()->message);
                     failed = NAIVE_TRUE;
                 }
             }
