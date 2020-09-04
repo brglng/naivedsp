@@ -103,10 +103,7 @@ NaiveErr naive_delay_set_delay_len(NaiveDelay *self, NaiveI32 delay_len)
     if (delay_len > self->delay_len_cap)
         return NAIVE_ERR_INVALID_PARAMETER;
 
-    if (delay_len > self->delay_len) {
-        naive_delay_buf_write_zeros(&self->in_delay_buf, delay_len - self->delay_len);
-        naive_delay_buf_write_zeros(&self->out_delay_buf, delay_len - self->delay_len);
-    } else if (delay_len < self->delay_len) {
+    if (delay_len < self->delay_len) {
         naive_delay_buf_drain(&self->in_delay_buf, self->delay_len - delay_len);
         naive_delay_buf_drain(&self->out_delay_buf, self->delay_len - delay_len);
     }
