@@ -133,5 +133,5 @@ int main(void)
 
     naive_default_allocator_finalize(&allocator);
 
-    return (!err && num_failed == 0) ? 0 : ((NaiveI32)err + NAIVE_ERR_CODES_COUNT + num_failed);
+    return (!err && num_failed == 0) ? 0 : ((int)err + NAIVE_ERR_CODES_COUNT + num_failed);
 }

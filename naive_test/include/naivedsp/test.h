@@ -13,7 +13,7 @@ extern "C" {
 
 typedef struct {
     NaiveI32    num_samples;
-    NaiveF32    max_diff;
+    NaiveF64    max_diff;
     NaiveI32    max_diff_idx;
 } NaiveTestStats;
 

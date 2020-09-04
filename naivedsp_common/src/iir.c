@@ -81,22 +81,22 @@ NaiveErr naive_iir_df1_init(NaiveIirDf1 *self, NaiveAllocFunc alloc, void *alloc
     self->sos_states = NULL;
     self->gain = 1.0f;
 
-    self->fos_coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, NAIVE_ALIGNOF(NaiveIir1stCoeffs), sizeof(NaiveIir1stCoeffs));
+    self->fos_coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, sizeof(NaiveIir1stCoeffs));
     if (!err && !self->fos_coeffs)
         err = NAIVE_ERR_NOMEM;
 
     if (num_sos_cap > 0) {
-        self->sos_coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, NAIVE_ALIGNOF(NaiveIir2ndCoeffs), sizeof(NaiveIir2ndCoeffs));
+        self->sos_coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, sizeof(NaiveIir2ndCoeffs));
         if (!err && !self->sos_coeffs)
             err = NAIVE_ERR_NOMEM;
     }
 
-    self->fos_states = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveIir1stDf1States), sizeof(NaiveIir1stDf1States));
+    self->fos_states = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveIir1stDf1States));
     if (!err && !self->fos_states)
         err = NAIVE_ERR_NOMEM;
 
     if (num_sos_cap > 0) {
-        self->sos_states = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveIir2ndDf1States), sizeof(NaiveIir2ndDf1States) * (NaiveUSize)num_sos_cap);
+        self->sos_states = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveIir2ndDf1States) * (NaiveUSize)num_sos_cap);
         if (!err && !self->sos_states)
             err = NAIVE_ERR_NOMEM;
     }

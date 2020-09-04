@@ -4,32 +4,37 @@
 #include <string.h>
 #include "naivedsp/delay.h"
 #include "naivedsp/test.h"
-#include "test_desc.h"
 
 typedef struct {
-    NaiveDelayStates    states;
-    NaiveDelayParams    params;
-    void                *scratch;
+    NaiveDelay delay_obj;
 } TestContext;
 
-NaiveResult set_params(void *_context, NAIVE_CONST NaiveTestCaseDesc *case_desc, NaiveI32 sample_rate)
+NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
 {
     TestContext *context = _context;
-    NaiveResult err = NAIVE_OK;
+    NaiveErr err = NAIVE_OK;
 
-    context->params.delay_len = (NaiveI32)(naive_test_case_desc_get_f32(case_desc, KEY_DELAY_TIME) * (NaiveF32)sample_rate);
-    context->params.feedback_gain = naive_test_case_desc_get_f32(case_desc, KEY_FEEDBACK);
-    context->params.dry_gain = naive_test_case_desc_get_f32(case_desc, KEY_DRY_GAIN);
-    context->params.wet_gain = naive_test_case_desc_get_f32(case_desc, KEY_WET_GAIN);
+    err = naive_delay_set_delay_len(&context->delay_obj, (NaiveI32)(toml_table_get_as_float(config, "delay-time") * (NaiveF32)sample_rate));
+
+    if (!err) {
+        err = naive_delay_set_feedback_gain(&context->delay_obj, (NaiveF32)toml_table_get_as_float(config, "feedback-gain"));
+    }
+    if (!err) {
+        err = naive_delay_set_dry_gain(&context->delay_obj, (NaiveF32)toml_table_get_as_float(config, "dry-gain"));
+    }
+    if (!err) {
+        err = naive_delay_set_wet_gain(&context->delay_obj, (NaiveF32)toml_table_get_as_float(config, "wet-gain"));
+    }
 
     return err;
 }
 
-NaiveResult test_setup(void *_context, NAIVE_CONST NaiveTestCaseDesc *case_desc, NaiveI32 sample_rate)
+NaiveErr test_setup(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
 {
     TestContext *context = _context;
-    naive_delay_reset(&context->states);
-    return set_params(context, case_desc, sample_rate);
+    naive_delay_reset(&context->delay_obj);
+    naive_delay_set_default_params(&context->delay_obj);
+    return set_params(context, config, sample_rate);
 }
 
 void test_teardown(void *_context)
@@ -37,60 +42,49 @@ void test_teardown(void *_context)
     (void)_context;
 }
 
-NaiveResult test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size)
+NaiveErr test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size)
 {
     TestContext *context = _context;
-    memcpy(out[0], in[0], sizeof(NaiveF32) * block_size);
-    naive_delay_process(&context->states, &context->params, out[0], block_size, context->scratch);
+    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
+    naive_delay_process(&context->delay_obj, out[0], block_size);
     return NAIVE_OK;
 }
 
 int main(void)
 {
-    int err = 0;
+    NaiveErr err = 0;
 
     NaiveDefaultAllocator allocator;
     naive_default_allocator_init(&allocator);
 
     TestContext context;
-    naive_delay_params_init(&context.params);
-    err = naive_delay_states_init(&context.states, &naive_default_alloc, &allocator, 88200);
-
-    if (!err) {
-        context.scratch = naive_default_alloc(&allocator, NAIVE_MEM_SCRATCH, 8, NAIVE_DELAY_SCRATCH_SIZE(256, 88200));
-        if (!context.scratch)
-            err = NAIVE_ERR_NOMEM;
-    }
-
-    NaiveTestDesc test_desc;
-    if (!err) {
-        err = init_test_desc(&test_desc, &naive_default_alloc, &allocator);
-    }
+    err = naive_delay_init(&context.delay_obj, &allocator, &naive_default_alloc, 256, 88200);
 
     NaiveTest test;
 
     if (!err) {
         err = naive_test_init(&test,
-                            &naive_default_alloc,
-                            &allocator,
-                            &test_desc,
-                            NAIVE_TEST_INPUTS_DIR,
-                            NAIVE_TEST_WORKING_DIR "/test_out",
-                            NAIVE_TEST_REFS_DIR,
-                            1,
-                            1,
-                            256,
-                            &test_setup,
-                            &test_teardown,
-                            &test_process,
-                            &context);
+                              &naive_default_alloc,
+                              &allocator,
+                              NAIVE_TEST_SOURCE_DIR "/config.toml",
+                              NAIVE_TEST_INPUTS_DIR,
+                              NAIVE_TEST_BINARY_DIR "/outputs",
+                              NAIVE_TEST_SOURCE_DIR "/refs",
+                              1,
+                              1,
+                              256,
+                              &test_setup,
+                              &test_teardown,
+                              &test_process,
+                              &context);
     }
 
+    NaiveI32 num_failed = 0;
     if (!err) {
-        err = naive_test_run(&test);
+        num_failed = naive_test_run(&test);
     }
 
     naive_default_allocator_finalize(&allocator);
 
-    return err;
+    return (!err && num_failed == 0) ? 0 : ((int)err + NAIVE_ERR_CODES_COUNT + num_failed);
 }

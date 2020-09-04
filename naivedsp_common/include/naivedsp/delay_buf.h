@@ -10,7 +10,7 @@ extern "C" {
 #include "naivedsp/err.h"
 #include "naivedsp/memory.h"
 
-NaiveErr naive_delay_buf_init(NaiveDelayBuf *self, NaiveAllocFunc alloc, void *allocator, NaiveI32 size);
+NaiveErr naive_delay_buf_init(NaiveDelayBuf *self, void *allocator, NaiveAllocFunc alloc, NaiveI32 size);
 
 NAIVE_INLINE void naive_delay_buf_reset(NaiveDelayBuf *self) {
     self->pos = 0;
@@ -32,6 +32,7 @@ NAIVE_INLINE NaiveBool naive_delay_buf_is_empty(NAIVE_CONST NaiveDelayBuf *self)
 NAIVE_INLINE void naive_delay_buf_drain(NaiveDelayBuf *self, NaiveI32 len) {
     NAIVE_ASSERT(len <= self->len);
     self->pos += len;
+    self->len -= len;
 }
 
 void naive_delay_buf_write(NaiveDelayBuf *self, NAIVE_CONST NaiveF32 *buf, NaiveI32 len);

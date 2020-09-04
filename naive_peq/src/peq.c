@@ -8,7 +8,7 @@ NaiveErr naive_peq_init(NaivePeq *self, void *alloc_context, NaiveAllocFunc allo
     NaiveErr err = NAIVE_OK;
 
     self->num_bands_cap = num_bands_cap;
-    self->bands = NAIVE_NEW(alloc_context, alloc, NAIVE_MEM_STATE, NaiveIirDf1, (NaiveUSize)num_bands_cap);
+    self->bands = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveIirDf1) * (NaiveUSize)num_bands_cap);
     if (!err && !self->bands)
         err = NAIVE_ERR_NOMEM;
 

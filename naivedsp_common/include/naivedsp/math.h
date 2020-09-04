@@ -14,9 +14,23 @@ void naive_gain(NaiveF32 *inout, NaiveI32 block_size, NaiveF32 gain);
 void naive_mix(NaiveF32 *output, NaiveF32 *input, NaiveI32 len);
 void naive_mix_with_gain(NaiveF32 *output, NaiveF32 *input, NaiveF32 gain, NaiveI32 len);
 
+NAIVE_INLINE NaiveU64 naive_next_pow_of_two_u64(NaiveU64 x)
+{
+    NAIVE_ASSERT(x <= 0x8000000000000000UL);
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x |= x >> 32;
+    x++;
+    return x;
+}
+
 NAIVE_INLINE NaiveU32 naive_next_pow_of_two_u32(NaiveU32 x)
 {
-    NAIVE_ASSERT(x <= 0x80000000);
+    NAIVE_ASSERT(x <= 0x80000000U);
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -26,6 +40,16 @@ NAIVE_INLINE NaiveU32 naive_next_pow_of_two_u32(NaiveU32 x)
     x++;
     return x;
 }
+
+#if NAIVE_X86_64
+NAIVE_INLINE NaiveUSize naive_next_pow_of_two_usize(NaiveUSize x) {
+    return naive_next_pow_of_two_u64(x);
+}
+#else
+NAIVE_INLINE NaiveUSize naive_next_pow_of_two_usize(NaiveUSize x) {
+    return naive_next_pow_of_two_u32(x);
+}
+#endif
 
 NAIVE_INLINE NaiveI32 naive_next_pow_of_two_i32(NaiveI32 x)
 {

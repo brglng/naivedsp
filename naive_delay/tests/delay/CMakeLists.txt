@@ -1,21 +1,25 @@
 add_executable(naive-delay-test
   main.c
-  test_desc.c
-  $<TARGET_OBJECTS:naive-delay>
-  $<TARGET_OBJECTS:naivedsp-common>
-  $<TARGET_OBJECTS:naive-test>
   )
+
+target_compile_features(naive-delay-test PRIVATE ${naivedsp_compile_features})
 
 target_compile_definitions(naive-delay-test PRIVATE
-  NAIVE_TEST_REFS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/refs"
+  ${naivedsp_compile_definitions}
+  NAIVE_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+  NAIVE_TEST_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+  NAIVE_TEST_INPUTS_DIR="${PROJECT_SOURCE_DIR}/naive_test/inputs"
   )
 
-target_include_directories(naive-delay-test PUBLIC
-  ../../include
-  ../../../naivedsp_common/include
-  ../../../naive_test/include
+target_compile_options(naive-delay-test PRIVATE
+  ${naivedsp_c_flags}
+  $<$<CONFIG:RELEASE>:${naivedsp_compile_options_release}>
+  $<$<CONFIG:RELWITHDEBINFO>:${naivedsp_compile_options_release}>
   )
 
-if (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang"))
-  target_link_libraries(naive-delay-test m)
-endif()
+target_link_libraries(naive-delay-test
+  naivedsp::common
+  naivedsp::delay
+  naivedsp::test
+  ${naivedsp_link_libraries})
+

@@ -42,56 +42,56 @@ NaiveErr naive_test_init(NaiveTest *self,
         return NAIVE_ERR;
     }
 
-    self->in_fname = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(char), sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
+    self->in_fname = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
     if (!self->in_fname)
         return NAIVE_ERR_NOMEM;
 
-    self->out_fname = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(char), sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
+    self->out_fname = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
     if (!self->out_fname)
         return NAIVE_ERR_NOMEM;
 
-    self->ref_fname = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(char), sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
+    self->ref_fname = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(char) * (NAIVE_TEST_FILENAME_MAX + 1));
     if (!self->ref_fname)
         return NAIVE_ERR_NOMEM;
 
-    self->in_i16 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveI16), sizeof(NaiveI16) * (NaiveUSize)num_in_channels_cap * (NaiveUSize)block_size_cap);
+    self->in_i16 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveI16) * (NaiveUSize)num_in_channels_cap * (NaiveUSize)block_size_cap);
     if (!self->in_i16)
         return NAIVE_ERR_NOMEM;
 
-    self->out_i16 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveI16), sizeof(NaiveI16) * (NaiveUSize)num_out_channels_cap * (NaiveUSize)block_size_cap);
+    self->out_i16 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveI16) * (NaiveUSize)num_out_channels_cap * (NaiveUSize)block_size_cap);
     if (!self->out_i16)
         return NAIVE_ERR_NOMEM;
 
-    self->ref_i16 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveI16), sizeof(NaiveI16) * (NaiveUSize)num_out_channels_cap * (NaiveUSize)block_size_cap);
+    self->ref_i16 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveI16) * (NaiveUSize)num_out_channels_cap * (NaiveUSize)block_size_cap);
     if (!self->ref_i16)
         return NAIVE_ERR_NOMEM;
 
-    self->in_f32 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32 *), sizeof(NaiveF32*) * (NaiveUSize)num_in_channels_cap);
+    self->in_f32 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32*) * (NaiveUSize)num_in_channels_cap);
     if (!self->in_f32)
         return NAIVE_ERR_NOMEM;
 
-    self->out_f32 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32 *), sizeof(NaiveF32*) * (NaiveUSize)num_out_channels_cap);
+    self->out_f32 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32*) * (NaiveUSize)num_out_channels_cap);
     if (!self->out_f32)
         return NAIVE_ERR_NOMEM;
 
-    self->ref_f32 = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32 *), sizeof(NaiveF32*) * (NaiveUSize)num_out_channels_cap);
+    self->ref_f32 = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32*) * (NaiveUSize)num_out_channels_cap);
     if (!self->ref_f32)
         return NAIVE_ERR_NOMEM;
 
-    self->stats = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveTestStats), sizeof(NaiveTestStats) * (NaiveUSize)num_out_channels_cap);
+    self->stats = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveTestStats) * (NaiveUSize)num_out_channels_cap);
 
     for (NaiveI32 i = 0; i < num_in_channels_cap; ++i) {
-        self->in_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32), sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
+        self->in_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
         if (!self->in_f32[i])
             return NAIVE_ERR_NOMEM;
     }
 
     for (NaiveI32 i = 0; i < num_out_channels_cap; ++i) {
-        self->out_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32), sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
+        self->out_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
         if (!self->out_f32[i])
             return NAIVE_ERR_NOMEM;
 
-        self->ref_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, NAIVE_ALIGNOF(NaiveF32), sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
+        self->ref_f32[i] = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
         if (!self->ref_f32[i])
             return NAIVE_ERR_NOMEM;
     }
@@ -119,7 +119,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         NaiveI32 num_out_channels = 0;
 
         if (toml_table_iter_get(&it)->value->type != TOML_TABLE) {
-            fprintf(stderr, "test %d: invalid test config", i);
+            fprintf(stderr, "[test %d] invalid test config", i);
             failed = NAIVE_TRUE;
         }
 
@@ -127,11 +127,11 @@ NaiveI32 naive_test_run(NaiveTest *test)
             case_name = toml_table_iter_get(&it)->key->str;
             case_config = toml_table_iter_get(&it)->value->value.table;
 
-            printf("test %u [%s] begin\n", i, case_name);
+            printf("[test %u] [%s] begin\n", i, case_name);
 
             block_size = (NaiveI32)toml_table_get_as_integer(case_config, "block-size");
             if (block_size > test->block_size_cap) {
-                fprintf(stderr, "test %d: block-size is too large\n", i);
+                fprintf(stderr, "[test %d] [%s] block-size is too large\n", i, case_name);
                 failed = NAIVE_TRUE;
             }
         }
@@ -139,7 +139,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             num_out_channels = (NaiveI32)toml_table_get_as_integer(case_config, "out-channels");
             if (num_out_channels > test->num_out_channels_cap) {
-                fprintf(stderr, "test %d: out-channels is too large\n", i);
+                fprintf(stderr, "[test %d] [%s] out-channels is too large\n", i, case_name);
                 failed = NAIVE_TRUE;
             }
         }
@@ -149,7 +149,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
             case_out_fname = toml_table_get_as_string(case_config, "output")->str;
 
             if (strlen(test->inputs_dir) + 1 + strlen(case_in_fname) > NAIVE_TEST_FILENAME_MAX) {
-                fprintf(stderr, "test %d: input filename is too long\n", i);
+                fprintf(stderr, "[test %d] [%s] input filename is too long\n", i, case_name);
                 failed = NAIVE_TRUE;
             }
         }
@@ -160,7 +160,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
             strcat(test->in_fname, case_in_fname);
 
             if (strlen(test->outputs_dir) + 1 + strlen(case_out_fname) > NAIVE_TEST_FILENAME_MAX) {
-                fprintf(stderr, "test %d: output filename is too long\n", i);
+                fprintf(stderr, "[test %d] [%s] output filename is too long\n", i, case_name);
                 failed = NAIVE_TRUE;
             }
         }
@@ -171,7 +171,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
             strcat(test->out_fname, case_out_fname);
 
             if (strlen(test->refs_dir) + 1 + strlen(case_out_fname) > NAIVE_TEST_FILENAME_MAX) {
-                fprintf(stderr, "test %d: ref filename is too long\n", i);
+                fprintf(stderr, "[test %d] [%s] ref filename is too long\n", i, case_name);
                 failed = NAIVE_TRUE;
             }
         }
@@ -184,7 +184,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
             fin = wav_open(test->in_fname, "rb");
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->in_fname, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] could not open %s [libwav error %d: %s]\n", i, case_name, test->in_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -196,7 +196,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
             num_in_channels = (NaiveI32)wav_get_num_channels(fin);
             fout = wav_open(test->out_fname, "wb");
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->out_fname, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] could not open %s [libwav error %d: %s]\n", i, case_name, test->out_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -204,7 +204,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             wav_set_sample_rate(fout, (NaiveU32)sample_rate);
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: wav_set_sample_rate() failed [libwav error %d: %s]\n", i, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] wav_set_sample_rate() failed [libwav error %d: %s]\n", i, case_name, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -212,7 +212,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             wav_set_num_channels(fout, (NaiveU16)num_out_channels);
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: wav_set_num_channels() failed [libwav error %d: %s]\n", i, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] wav_set_num_channels() failed [libwav error %d: %s]\n", i, case_name, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
         }
@@ -221,23 +221,23 @@ NaiveI32 naive_test_run(NaiveTest *test)
         if (!failed) {
             fref = wav_open(test->ref_fname, "rb");
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: could not open %s [libwav error %d: %s]\n", i, test->ref_fname, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] could not open %s [libwav error %d: %s]\n", i, case_name, test->ref_fname, wav_err()->code, wav_err()->message);
                 wav_close(fref);
                 fref = NULL;
                 wav_err_clear();
             }
             if (fref != NULL && (wav_get_sample_rate(fref) != (NaiveU32)sample_rate || wav_get_num_channels(fref) != num_out_channels)) {
-                fprintf(stderr, "test %d: ref file %s is incorrect\n", i, test->ref_fname);
+                fprintf(stderr, "[test %d] [%s] ref file %s is incorrect\n", i, case_name, test->ref_fname);
                 wav_close(fref);
                 fref = NULL;
                 wav_err_clear();
             }
-        }
-
-        if (!failed) {
+            if (fref == NULL) {
+                fprintf(stderr, "[test %d] [%s] error when opening ref file, running test case without comparison.\n", i, case_name);
+            }
             NaiveErr setup_err = test->setup(test->context, case_config, sample_rate);
             if (setup_err != NAIVE_OK) {
-                fprintf(stderr, "test %d: setup failed with error %d\n", i, setup_err);
+                fprintf(stderr, "[test %d] [%s] setup failed with error %d\n", i, case_name, setup_err);
                 failed = NAIVE_TRUE;
             }
         }
@@ -265,7 +265,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
         while (!failed) {
             NaiveI32 real_block_size = (NaiveI32)wav_read(fin, test->in_i16, (size_t)block_size);
             if (wav_err()->code != WAV_OK) {
-                fprintf(stderr, "test %d: failed to read %s [libwav error %d: %s]\n", i, test->in_fname, wav_err()->code, wav_err()->message);
+                fprintf(stderr, "[test %d] [%s] failed to read %s [libwav error %d: %s]\n", i, case_name, test->in_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
 
@@ -273,7 +273,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
                 naive_i16_q15_interleaved_to_f32_planar(test->in_f32, test->in_i16, num_in_channels, real_block_size);
                 NaiveErr proc_err = test->process(test->context, test->in_f32, test->out_f32, real_block_size);
                 if (proc_err != NAIVE_OK) {
-                    fprintf(stderr, "test %d: the process function returned %d\n", i, proc_err);
+                    fprintf(stderr, "[test %d] [%s] the process function returned %d\n", i, case_name, proc_err);
                     failed = NAIVE_TRUE;
                 }
             }
@@ -282,7 +282,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
                 naive_f32_planar_to_i16_q15_interleaved(test->out_i16, test->out_f32, num_out_channels, real_block_size);
                 wav_write(fout, test->out_i16, (size_t)real_block_size);
                 if (wav_err()->code != WAV_OK) {
-                    fprintf(stderr, "test %d: failed to write to %s [libwav error %d: %s]\n", i, test->out_fname, wav_err()->code, wav_err()->message);
+                    fprintf(stderr, "[test %d] [%s] failed to write to %s [libwav error %d: %s]\n", i, case_name, test->out_fname, wav_err()->code, wav_err()->message);
                     failed = NAIVE_TRUE;
                 }
             }
@@ -291,7 +291,7 @@ NaiveI32 naive_test_run(NaiveTest *test)
                 if (fref != NULL) {
                     size_t count_ref = wav_read(fref, test->ref_i16, (size_t)real_block_size);
                     if ((NaiveI32)count_ref != real_block_size) {
-                        fprintf(stderr, "test %d: ref file %s is incorrect\n", i, test->ref_fname);
+                        fprintf(stderr, "[test %d] [%s] ref file %s is incorrect\n", i, case_name, test->ref_fname);
                         failed = NAIVE_TRUE;
                     }
 
@@ -321,16 +321,16 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
         if (fref != NULL) {
             for (NaiveI32 ich = 0; ich < num_out_channels; ich++) {
-                printf("test %d: channel %d: ", i, ich);
+                printf("[test %d] [%s] channel %d: ", i, case_name, ich);
                 naive_test_stats_print(&test->stats[ich]);
             }
         }
 
         if (failed) {
-            printf("test %d [%s] failed\n", i, case_name);
+            printf("[test %d] [%s] failed\n", i, case_name);
             num_failed++;
         } else {
-            printf("test %d [%s] passed\n", i, case_name);
+            printf("[test %d] [%s] passed\n", i, case_name);
             num_passed++;
         }
 
@@ -361,7 +361,7 @@ void naive_test_stats_init(NaiveTestStats *stats)
 void naive_test_stats_update(NaiveTestStats *stats, NaiveF32 *out, NaiveF32 *ref_out, NaiveI32 block_size)
 {
     for (NaiveI32 i = 0; i < block_size; i++) {
-        NaiveF32 diff = NAIVE_ABS(out[i] - ref_out[i]);
+        NaiveF64 diff = NAIVE_ABS(out[i] - ref_out[i]);
         if (diff > stats->max_diff) {
             stats->max_diff = diff;
             stats->max_diff_idx = stats->num_samples + i;
