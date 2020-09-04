@@ -97,10 +97,7 @@ NaiveErr naive_delay_process(NaiveDelay *self, NaiveF32 *inout, NaiveI32 block_s
 
 NaiveErr naive_delay_set_delay_len(NaiveDelay *self, NaiveI32 delay_len)
 {
-    if (delay_len < 0)
-        return NAIVE_ERR_INVALID_PARAMETER;
-
-    if (delay_len > self->delay_len_cap)
+    if (delay_len < 0 || delay_len > self->delay_len_cap)
         return NAIVE_ERR_INVALID_PARAMETER;
 
     if (delay_len < self->delay_len) {
