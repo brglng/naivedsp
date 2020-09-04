@@ -2,7 +2,7 @@
 
 A naive DSP library which implements several audio effects and processing algorithms.
 
-## Compile
+## Build
 
     mkdir build
     cd build
