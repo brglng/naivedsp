@@ -9,17 +9,6 @@ extern "C" {
 #include "naivedsp/platdefs.h"
 #include "naivedsp/math_types.h"
 
-#ifdef __cplusplus
-#define NAIVE_ALIGNOF(type) alignof(type)
-#else
-#if __STDC_VERSION__ >= 201112L
-#define NAIVE_ALIGNOF(type) _Alignof(type)
-#else
-#include <stddef.h>
-#define NAIVE_ALIGNOF(type) offsetof(struct { char c; type d; }, d)
-#endif
-#endif
-
 #if NAIVE_GCC || NAIVE_CLANG
 #define NAIVE_ATTRIBUTE_MALLOC __attribute__((malloc))
 #else
