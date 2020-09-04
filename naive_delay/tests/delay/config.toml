@@ -1,6 +1,6 @@
 [delay]
 input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
-output = "delay-44k-time-1s-feedback-0.5-dry-0.4-wet-0.6.wav"
+output = "delay-44k-time-0.5s-feedback-0.5-dry-0.4-wet-0.6.wav"
 out-channels = 1
 block-size = 256
 delay-time = 0.5        # in seconds
