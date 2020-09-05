@@ -151,14 +151,18 @@ NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, Naiv
     return NAIVE_OK;
 }
 
+void naive_stereo_delay_reset(NaiveStereoDelay *self)
+{
+    naive_delay_buf_reset(&self->left_in_delay);
+    naive_delay_buf_reset(&self->left_out_delay);
+    naive_delay_buf_reset(&self->right_in_delay);
+    naive_delay_buf_reset(&self->right_out_delay);
+}
+
 NaiveErr naive_stereo_delay_set_left_delay_len(NaiveStereoDelay *self, NaiveI32 len)
 {
     if (len < 0 || len > self->delay_len_cap) {
         return NAIVE_ERR_INVALID_PARAMETER;
-    }
-    if (len < self->left_delay_len) {
-        naive_delay_buf_drain(&self->left_in_delay, self->left_delay_len - len);
-        naive_delay_buf_drain(&self->left_out_delay, self->left_delay_len - len);
     }
     self->left_delay_len = len;
     return NAIVE_OK;
@@ -191,14 +195,10 @@ NaiveErr naive_stereo_delay_set_left_wet_gain(NaiveStereoDelay *self, NaiveF32 w
     return NAIVE_OK;
 }
 
-NaiveErr naive_stereo_delay_set_right_delay_length(NaiveStereoDelay *self, NaiveI32 len)
+NaiveErr naive_stereo_delay_set_right_delay_len(NaiveStereoDelay *self, NaiveI32 len)
 {
     if (len < 0 || len > self->delay_len_cap) {
         return NAIVE_ERR_INVALID_PARAMETER;
-    }
-    if (len < self->right_delay_len) {
-        naive_delay_buf_drain(&self->right_in_delay, self->right_delay_len - len);
-        naive_delay_buf_drain(&self->right_out_delay, self->right_delay_len - len);
     }
     self->right_delay_len = len;
     return NAIVE_OK;
@@ -226,4 +226,18 @@ NaiveErr naive_stereo_delay_set_right_wet_gain(NaiveStereoDelay *self, NaiveF32 
 {
     self->right_wet_gain = gain;
     return NAIVE_OK;
+}
+
+void naive_stereo_delay_set_default_params(NaiveStereoDelay *self)
+{
+    self->left_delay_len = 0;
+    self->left_feedback_gain = 0.0f;
+    self->left_crossfeed_gain = 0.0f;
+    self->left_dry_gain = 1.0f;
+    self->left_wet_gain = 0.0f;
+    self->right_delay_len = 0;
+    self->right_feedback_gain = 0.0f;
+    self->right_crossfeed_gain = 0.0f;
+    self->right_dry_gain = 1.0f;
+    self->right_wet_gain = 0.0f;
 }

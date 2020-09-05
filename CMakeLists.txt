@@ -67,7 +67,10 @@ add_subdirectory(naive_stereo_delay)
 # add_subdirectory(naive_cascading_geq)
 # add_subdirectory(naive_fir_geq)
 # add_subdirectory(naive_fdn_reverb)
-add_subdirectory(naive_test)
+
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} AND BUILD_TESTING)
+  add_subdirectory(naive_test)
+endif()
 
 export(PACKAGE naivedsp)
 

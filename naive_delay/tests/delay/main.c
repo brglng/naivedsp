@@ -46,8 +46,7 @@ NaiveErr test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 bl
 {
     TestContext *context = _context;
     memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
-    naive_delay_process(&context->delay_obj, out[0], block_size);
-    return NAIVE_OK;
+    return naive_delay_process(&context->delay_obj, out[0], block_size);
 }
 
 int main(void)

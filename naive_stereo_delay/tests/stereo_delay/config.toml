@@ -1,0 +1,15 @@
+[stereo-delay]
+input = "Sweep_-15dBFS_44k_16bit_1ch.wav"
+output = "stereo-delay-left-delay-time-0.2-feedback-0.4-crossfeed-0.3-dry-0.7-wet-0.3-right-delay-time-0.7-feedback-0.4-crossfeed-0.3-dry-0.7-wet-0.3.wav"
+block-size = 256
+out-channels = 2
+left-delay-time = 0.2
+left-feedback-gain = 0.4
+left-crossfeed-gain = 0.3
+left-dry-gain = 0.7
+left-wet-gain = 0.3
+right-delay-time = 0.7
+right-feedback-gain = 0.4
+right-crossfeed-gain = 0.3
+right-dry-gain = 0.7
+right-wet-gain = 0.3

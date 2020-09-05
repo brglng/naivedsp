@@ -46,10 +46,8 @@ install(
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
   )
 
-if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  install(DIRECTORY include DESTINATION .)
-endif()
+install(DIRECTORY include DESTINATION .)
 
-# if(BUILD_TESTING)
-#   add_subdirectory(tests/stereo_delay)
-# endif()
+if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} AND BUILD_TESTING)
+  add_subdirectory(tests/stereo_delay)
+endif()

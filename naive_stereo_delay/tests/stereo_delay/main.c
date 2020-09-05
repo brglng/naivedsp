@@ -1,66 +1,108 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "naivedsp/stereo-delay.h"
+#include <string.h>
+#include "naivedsp/stereo_delay.h"
+#include "naivedsp/test.h"
 
-#define BLOCK_SIZE      256
-#define SAMPLE_RATE     44100
-#define MAX_DELAY_LEN   (10 * SAMPLE_RATE)
-#define LEFT_DELAY_LEN  (0.2 * SAMPLE_RATE)
-#define RIGHT_DELAY_LEN (0.7 * SAMPLE_RATE)
+typedef struct {
+    NaiveStereoDelay obj;
+} TestContext;
 
-int main(int argc, char *argv[])
+NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
 {
-  if (argc < 3) {
-    return -1;
-  }
+    TestContext *context = _context;
+    NaiveErr err = NAIVE_OK;
 
-  FILE *fin = fopen(argv[1], "rb");
-  FILE *fout = fopen(argv[2], "wb");
+    err = naive_stereo_delay_set_left_delay_len(&context->obj, (NaiveI32)(toml_table_get_as_float(config, "left-delay-time") * (NaiveF32)sample_rate));
 
-  NaiveDefaultAllocator allocator;
-  naive_default_allocator_init(&allocator);
+    if (!err) {
+        err = naive_stereo_delay_set_left_feedback_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-feedback-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_left_crossfeed_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-crossfeed-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_left_dry_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-dry-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_left_wet_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-wet-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_right_delay_len(&context->obj, (NaiveI32)(toml_table_get_as_float(config, "right-delay-time") * (NaiveF32)sample_rate));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_right_feedback_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-feedback-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_right_crossfeed_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-crossfeed-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_right_dry_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-dry-gain"));
+    }
+    if (!err) {
+        err = naive_stereo_delay_set_right_wet_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-wet-gain"));
+    }
 
-  NaiveStereoDelay delay;
-  void *scratch = malloc(naive_stereo_delay_scratch_size(BLOCK_SIZE, LEFT_DELAY_LEN, RIGHT_DELAY_LEN));
+    return err;
+}
 
-  naive_stereo_delay_init(&delay, MAX_DELAY_LEN, BLOCK_SIZE, &allocator);
-  naive_stereo_delay_set_left_delay_length(&delay, LEFT_DELAY_LEN);
-  naive_stereo_delay_set_left_feedback_gain(&delay, 0.4f);
-  naive_stereo_delay_set_left_mix_level(&delay, 0.5f);
-  naive_stereo_delay_set_left_crossfeed_gain(&delay, 0.3f);
-  naive_stereo_delay_set_right_delay_length(&delay, RIGHT_DELAY_LEN);
-  naive_stereo_delay_set_right_feedback_gain(&delay, 0.4f);
-  naive_stereo_delay_set_right_mix_level(&delay, 0.5f);
-  naive_stereo_delay_set_right_crossfeed_gain(&delay, 0.3f);
+NaiveErr test_setup(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
+{
+    TestContext *context = _context;
+    naive_stereo_delay_reset(&context->obj);
+    naive_stereo_delay_set_default_params(&context->obj);
+    return set_params(context, config, sample_rate);
+}
 
-  NaiveI16 *inout_i16 = malloc(sizeof(NaiveI16) * BLOCK_SIZE * 2);
-  float *inout_float = malloc(sizeof(float) * BLOCK_SIZE * 2);
+void test_teardown(void *_context)
+{
+    (void)_context;
+}
 
-  float *left = malloc(sizeof(float) * BLOCK_SIZE + 8);
-  float *right = malloc(sizeof(float) * BLOCK_SIZE + 8);
+NaiveErr test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size)
+{
+    TestContext *context = _context;
+    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
+    memcpy(out[1], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
+    return naive_stereo_delay_process(&context->obj, out[0], out[1], block_size);
+}
 
-  size_t count;
-  do {
-    count = fread(inout_i16, sizeof(NaiveI16), BLOCK_SIZE * 2, fin);
-    naive_i16_q15_to_float(inout_float, inout_i16, count);
-    naive_interleaved_to_planar(left, right, inout_float, count / 2);
+int main(void)
+{
+    NaiveErr err = 0;
 
-    naive_stereo_delay_process(&delay, left, right, count / 2, scratch);
+    NaiveDefaultAllocator allocator;
+    naive_default_allocator_init(&allocator);
 
-    naive_planar_to_interleaved(inout_float, left, right, count / 2);
-    naive_float_to_i16_q15(inout_i16, inout_float, count);
-    fwrite(inout_i16, sizeof(NaiveI16), count, fout);
-  } while (count == BLOCK_SIZE * 2);
+    TestContext context;
+    err = naive_stereo_delay_init(&context.obj, &allocator, &naive_default_alloc, 256, 88200);
 
-  naive_stereo_delay_finalize(&delay);
-  free(right);
-  free(left);
-  free(inout_float);
-  free(inout_i16);
-  free(scratch);
-  fclose(fin);
-  fclose(fout);
+    NaiveTest test;
 
-  return 0;
+    if (!err) {
+        err = naive_test_init(&test,
+                              &naive_default_alloc,
+                              &allocator,
+                              NAIVE_TEST_SOURCE_DIR "/config.toml",
+                              NAIVE_TEST_INPUTS_DIR,
+                              NAIVE_TEST_BINARY_DIR "/outputs",
+                              NAIVE_TEST_SOURCE_DIR "/refs",
+                              1,
+                              2,
+                              256,
+                              &test_setup,
+                              &test_teardown,
+                              &test_process,
+                              &context);
+    }
+
+    NaiveI32 num_failed = 0;
+    if (!err) {
+        num_failed = naive_test_run(&test);
+    }
+
+    naive_default_allocator_finalize(&allocator);
+
+    return (!err && num_failed == 0) ? 0 : ((int)err + NAIVE_ERR_CODES_COUNT + num_failed);
 }

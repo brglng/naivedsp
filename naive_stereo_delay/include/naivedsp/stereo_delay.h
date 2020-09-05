@@ -40,12 +40,15 @@ NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self,
                                     NaiveF32 *left_inout, NaiveF32 *right_inout,
                                     NaiveI32 block_size);
 
+void naive_stereo_delay_reset(NaiveStereoDelay *self);
+void naive_stereo_delay_set_default_params(NaiveStereoDelay *self);
+
 NaiveErr naive_stereo_delay_set_left_delay_len(NaiveStereoDelay *self, NaiveI32 delay_len);
 NaiveErr naive_stereo_delay_set_left_feedback_gain(NaiveStereoDelay *self, NaiveF32 feedback_gain);
 NaiveErr naive_stereo_delay_set_left_crossfeed_gain(NaiveStereoDelay *self, NaiveF32 crossfeed_gain);
 NaiveErr naive_stereo_delay_set_left_dry_gain(NaiveStereoDelay *self, NaiveF32 dry_gain);
 NaiveErr naive_stereo_delay_set_left_wet_gain(NaiveStereoDelay *self, NaiveF32 wet_gain);
-NaiveErr naive_stereo_delay_set_right_delay_length(NaiveStereoDelay *self, NaiveI32 delay_len);
+NaiveErr naive_stereo_delay_set_right_delay_len(NaiveStereoDelay *self, NaiveI32 delay_len);
 NaiveErr naive_stereo_delay_set_right_feedback_gain(NaiveStereoDelay *self, NaiveF32 feedback_gain);
 NaiveErr naive_stereo_delay_set_right_crossfeed_gain(NaiveStereoDelay *self, NaiveF32 crossfeed_gain);
 NaiveErr naive_stereo_delay_set_right_dry_gain(NaiveStereoDelay *self, NaiveF32 dry_gain);
