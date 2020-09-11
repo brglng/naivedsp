@@ -23,3 +23,8 @@ target_link_libraries(naive-delay-test
   naivedsp::test
   ${naivedsp_link_libraries})
 
+add_custom_command(
+  TARGET naive-delay-test POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/outputs)
+
+add_test(NAME naive-delay-test COMMAND $<TARGET_FILE:naive-delay-test>)

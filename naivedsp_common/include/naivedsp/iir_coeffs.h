@@ -34,7 +34,6 @@ NaiveErr naive_iir_1st_coeffs_set_bilinear_lowpass(NaiveIir1stCoeffs *self, Naiv
  */
 NaiveErr naive_iir_1st_coeffs_set_bilinear_highpass(NaiveIir1stCoeffs *self, NaiveI32 sample_rate, NaiveF32 freq, NaiveF32 b0, NaiveF32 b1, NaiveF32 a0, NaiveF32 a1);
 
-
 typedef struct {
     NaiveF32 b0;
     NaiveF32 b1;

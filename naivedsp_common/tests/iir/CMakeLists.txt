@@ -21,3 +21,9 @@ target_link_libraries(naive-iir-test
   naivedsp-common
   naive-test
   ${naivedsp_link_libraries})
+
+add_custom_command(
+  TARGET naive-iir-test POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/outputs)
+
+add_test(NAME naive-iir-test COMMAND $<TARGET_FILE:naive-iir-test>)

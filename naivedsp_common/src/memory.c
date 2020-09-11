@@ -29,6 +29,8 @@ NAIVE_ATTRIBUTE_MALLOC void *naive_default_alloc(void *_self, NaiveMemType type,
             self->scratch = NULL;
             void *p = malloc(size);
             NAIVE_ASSERT(p != NULL);
+            self->scratch = p;
+            self->scratch_size = size;
             return p;
         } else {
             return self->scratch;
@@ -36,8 +38,7 @@ NAIVE_ATTRIBUTE_MALLOC void *naive_default_alloc(void *_self, NaiveMemType type,
     } else {
         if (self->num_blocks == self->_num_blocks_cap) {
             self->blocks = realloc(self->blocks, sizeof(void *) * self->num_blocks * 2);
-            if (self->blocks == NULL)
-                return NULL;
+            NAIVE_ASSERT(self->blocks != NULL);
             self->_num_blocks_cap *= 2;
         }
 

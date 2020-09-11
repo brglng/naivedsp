@@ -1,0 +1,17 @@
+[reverb-default-params]
+input = "冬天虽然宁静.wav"
+output = "reverb-default-params.wav"
+block-size = 256
+out-channels = 2
+pre-delay-time = 0.01
+num-delays = 16
+max-acoustic-path = 60.0
+min-acoustic-path = 20.0
+low-mid-xover-freq = 300.0
+high-damp-freq = 4000.0
+dc-reverb-time = 4.0
+mid-freq-reverb-time = 2.0
+input-gain = 1.0
+output-gain = 1.0
+dry-gain = 0.0
+wet-gain = 6.0
