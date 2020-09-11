@@ -86,18 +86,31 @@ void test_teardown(void *_context)
     (void)_context;
 }
 
-NaiveErr test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size)
+NaiveErr test_process(void *_context,
+                      NaiveF32 **in,
+                      NaiveI32 num_in_channels,
+                      NaiveI32 in_len,
+                      NaiveF32 **out,
+                      NaiveI32 *out_len)
 {
     TestContext *context = _context;
-    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
+
+    if (num_in_channels != 1)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
+
     switch (context->order) {
     case 1:
-        naive_iir_1st_df1_process(&context->iir_1st_states, &context->iir_1st_coeffs, out[0], block_size);
+        naive_iir_1st_df1_process(&context->iir_1st_states, &context->iir_1st_coeffs, out[0], in_len);
         break;
     case 2:
-        naive_iir_2nd_df1_process(&context->iir_2nd_states, &context->iir_2nd_coeffs, out[0], block_size);
+        naive_iir_2nd_df1_process(&context->iir_2nd_states, &context->iir_2nd_coeffs, out[0], in_len);
         break;
     }
+
+    *out_len = in_len;
+
     return NAIVE_OK;
 }
 

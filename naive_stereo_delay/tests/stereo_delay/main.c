@@ -60,12 +60,23 @@ void test_teardown(void *_context)
     (void)_context;
 }
 
-NaiveErr test_process(void *_context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size)
+NaiveErr test_process(void *_context,
+                      NaiveF32 **in,
+                      NaiveI32 num_in_channels,
+                      NaiveI32 in_len,
+                      NaiveF32 **out,
+                      NaiveI32 *out_len)
 {
     TestContext *context = _context;
-    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
-    memcpy(out[1], in[0], sizeof(NaiveF32) * (NaiveUSize)block_size);
-    return naive_stereo_delay_process(&context->obj, out[0], out[1], block_size);
+
+    if (num_in_channels != 2)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
+    memcpy(out[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
+    *out_len = in_len;
+
+    return naive_stereo_delay_process(&context->obj, out[0], out[1], in_len);
 }
 
 int main(void)

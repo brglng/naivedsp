@@ -25,7 +25,12 @@ void naive_test_stats_print(NAIVE_CONST NaiveTestStats *stats);
 
 typedef NaiveErr    NaiveTestSetUpFunc(void *context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate);
 typedef void        NaiveTestTearDownFunc(void *context);
-typedef NaiveErr    NaiveTestProcessFunc(void *context, NaiveF32 **in, NaiveF32 **out, NaiveI32 block_size);
+typedef NaiveErr    NaiveTestProcessFunc(void *context,
+                                         NaiveF32 **in,
+                                         NaiveI32 num_in_channels,
+                                         NaiveI32 in_len,
+                                         NaiveF32 **out,
+                                         NaiveI32 *out_len);
 
 #define NAIVE_TEST_FILENAME_MAX       511
 #define NAIVE_TEST_FAIL_DB_THRESH     -70.0f

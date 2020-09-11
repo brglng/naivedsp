@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
@@ -446,14 +447,14 @@ NAIVE_INLINE void make_hadamard(NaiveF32 *hadamard, NaiveI32 order) {
     make_sub_hadamard(hadamard, order, order);
 }
 
-static NaiveErr naive_fdn_reverb_design(NaiveFdnReverb *self,
-                                        NaiveI32 num_delays,
-                                        NaiveF32 min_acoustic_path,
-                                        NaiveF32 max_acoustic_path,
-                                        NaiveF32 low_mid_xover_freq,
-                                        NaiveF32 high_damp_freq,
-                                        NaiveF32 dc_reverb_time,
-                                        NaiveF32 mid_freq_reverb_time)
+NaiveErr naive_fdn_reverb_set_room_params(NaiveFdnReverb *self,
+                                          NaiveI32 num_delays,
+                                          NaiveF32 min_acoustic_path,
+                                          NaiveF32 max_acoustic_path,
+                                          NaiveF32 low_mid_xover_freq,
+                                          NaiveF32 high_damp_freq,
+                                          NaiveF32 dc_reverb_time,
+                                          NaiveF32 mid_freq_reverb_time)
 {
     if (num_delays > self->num_delays_cap)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -602,90 +603,6 @@ NaiveErr naive_fdn_reverb_set_pre_delay_time(NaiveFdnReverb *self, NaiveF32 pre_
     return NAIVE_OK;
 }
 
-NaiveErr naive_fdn_reverb_set_num_delays(NaiveFdnReverb *self, NaiveI32 num_delays)
-{
-    return naive_fdn_reverb_design(self,
-                                   num_delays,
-                                   self->min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   self->dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_min_acoustic_path(NaiveFdnReverb *self, NaiveF32 min_acoustic_path)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   self->dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_max_acoustic_path(NaiveFdnReverb *self, NaiveF32 max_acoustic_path)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   self->min_acoustic_path,
-                                   max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   self->dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_low_mid_xover_freq(NaiveFdnReverb *self, NaiveF32 low_mid_xover_freq)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   self->min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   self->dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_high_damp_freq(NaiveFdnReverb *self, NaiveF32 high_damp_freq)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   self->min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   high_damp_freq,
-                                   self->dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_dc_reverb_time(NaiveFdnReverb *self, NaiveF32 dc_reverb_time)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   self->min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   dc_reverb_time,
-                                   self->mid_freq_reverb_time);
-}
-
-NaiveErr naive_fdn_reverb_set_mid_freq_reverb_time(NaiveFdnReverb *self, NaiveF32 mid_freq_reverb_time)
-{
-    return naive_fdn_reverb_design(self,
-                                   self->num_delays,
-                                   self->min_acoustic_path,
-                                   self->max_acoustic_path,
-                                   self->low_mid_xover_freq,
-                                   self->high_damp_freq,
-                                   self->dc_reverb_time,
-                                   mid_freq_reverb_time);
-}
-
 NaiveErr naive_fdn_reverb_set_input_gain(NaiveFdnReverb *self, NaiveF32 input_gain)
 {
     for (NaiveI32 i = 0; i < self->num_delays; ++i) {
@@ -716,15 +633,17 @@ NaiveErr naive_fdn_reverb_set_wet_gain(NaiveFdnReverb *self, NaiveF32 wet_gain)
 
 void naive_fdn_reverb_set_default_params(NaiveFdnReverb *self)
 {
-    naive_fdn_reverb_set_pre_delay_time(self, 0.01f);
-    naive_fdn_reverb_design(self,
-                            16,
-                            1.0f,
-                            10.0f,
-                            300.0f,
-                            4000.0f,
-                            1.2f,
-                            1.0f);
+    naive_fdn_reverb_set_pre_delay_time(self, 0.005f);
+    naive_fdn_reverb_set_room_params(self,
+                                     16,
+                                     1.0f,
+                                     10.0f,
+                                     300.0f,
+                                     4000.0f,
+                                     1.2f,
+                                     1.0f);
     naive_fdn_reverb_set_input_gain(self, 1.0f);
     naive_fdn_reverb_set_output_gain(self, 1.0f);
+    self->dry_gain = 0.293f;
+    self->wet_gain = 0.707f;
 }

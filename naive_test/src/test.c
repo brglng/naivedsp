@@ -263,15 +263,21 @@ NaiveI32 naive_test_run(NaiveTest *test)
         }
 
         while (!failed) {
-            NaiveI32 real_block_size = (NaiveI32)wav_read(fin, test->in_i16, (size_t)block_size);
+            NaiveI32 in_len = (NaiveI32)wav_read(fin, test->in_i16, (size_t)block_size);
             if (wav_err()->code != WAV_OK) {
                 fprintf(stderr, "[test %d] [%s] failed to read %s [libwav error %d: %s]\n", i, case_name, test->in_fname, wav_err()->code, wav_err()->message);
                 failed = NAIVE_TRUE;
             }
 
+            NaiveI32 out_len = 0;
             if (!failed) {
-                naive_i16_q15_interleaved_to_f32_planar(test->in_f32, test->in_i16, num_in_channels, real_block_size);
-                NaiveErr proc_err = test->process(test->context, test->in_f32, test->out_f32, real_block_size);
+                naive_i16_q15_interleaved_to_f32_planar(test->in_f32, test->in_i16, num_in_channels, in_len);
+                NaiveErr proc_err = test->process(test->context,
+                                                  test->in_f32,
+                                                  num_in_channels,
+                                                  in_len,
+                                                  test->out_f32,
+                                                  &out_len);
                 if (proc_err != NAIVE_OK) {
                     fprintf(stderr, "[test %d] [%s] the process function returned %d\n", i, case_name, proc_err);
                     failed = NAIVE_TRUE;
@@ -279,8 +285,8 @@ NaiveI32 naive_test_run(NaiveTest *test)
             }
 
             if (!failed) {
-                naive_f32_planar_to_i16_q15_interleaved(test->out_i16, test->out_f32, num_out_channels, real_block_size);
-                wav_write(fout, test->out_i16, (size_t)real_block_size);
+                naive_f32_planar_to_i16_q15_interleaved(test->out_i16, test->out_f32, num_out_channels, out_len);
+                wav_write(fout, test->out_i16, (size_t)out_len);
                 if (wav_err()->code != WAV_OK) {
                     fprintf(stderr, "[test %d] [%s] failed to write to %s [libwav error %d: %s]\n", i, case_name, test->out_fname, wav_err()->code, wav_err()->message);
                     failed = NAIVE_TRUE;
@@ -289,22 +295,22 @@ NaiveI32 naive_test_run(NaiveTest *test)
 
             if (!failed) {
                 if (fref != NULL) {
-                    size_t count_ref = wav_read(fref, test->ref_i16, (size_t)real_block_size);
-                    if ((NaiveI32)count_ref != real_block_size) {
+                    size_t ref_len = wav_read(fref, test->ref_i16, (size_t)out_len);
+                    if ((NaiveI32)ref_len != out_len) {
                         fprintf(stderr, "[test %d] [%s] ref file %s is incorrect\n", i, case_name, test->ref_fname);
                         failed = NAIVE_TRUE;
                     }
 
                     if (!failed) {
-                        naive_i16_q15_interleaved_to_f32_planar(test->ref_f32, test->ref_i16, num_out_channels, real_block_size);
+                        naive_i16_q15_interleaved_to_f32_planar(test->ref_f32, test->ref_i16, num_out_channels, out_len);
                         for (NaiveI32 ich = 0; ich < num_out_channels; ich++) {
-                            naive_test_stats_update(&test->stats[ich], test->out_f32[ich], test->ref_f32[ich], real_block_size);
+                            naive_test_stats_update(&test->stats[ich], test->out_f32[ich], test->ref_f32[ich], out_len);
                         }
                     }
                 }
             }
 
-            if (real_block_size < block_size)
+            if (in_len < block_size)
                 break;
         }
 

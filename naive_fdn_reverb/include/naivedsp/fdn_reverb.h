@@ -77,13 +77,14 @@ NaiveErr naive_fdn_reverb_process(
 void naive_fdn_reverb_reset(NaiveFdnReverb *self);
 
 NaiveErr naive_fdn_reverb_set_pre_delay_time(NaiveFdnReverb *self, NaiveF32 pre_delay_time);
-NaiveErr naive_fdn_reverb_set_num_delays(NaiveFdnReverb *self, NaiveI32 num_delays);
-NaiveErr naive_fdn_reverb_set_min_acoustic_path(NaiveFdnReverb *self, NaiveF32 min_acoustic_ray_len);
-NaiveErr naive_fdn_reverb_set_max_acoustic_path(NaiveFdnReverb *self, NaiveF32 max_acoustic_ray_len);
-NaiveErr naive_fdn_reverb_set_low_mid_xover_freq(NaiveFdnReverb *self, NaiveF32 low_mid_xover_freq);
-NaiveErr naive_fdn_reverb_set_high_damp_freq(NaiveFdnReverb *self, NaiveF32 high_damp_freq);
-NaiveErr naive_fdn_reverb_set_dc_reverb_time(NaiveFdnReverb *self, NaiveF32 dc_reverb_time);
-NaiveErr naive_fdn_reverb_set_mid_freq_reverb_time(NaiveFdnReverb *self, NaiveF32 mid_freq_reverb_time);
+NaiveErr naive_fdn_reverb_set_room_params(NaiveFdnReverb *self,
+                                          NaiveI32 num_delays,
+                                          NaiveF32 min_acoustic_path,
+                                          NaiveF32 max_acoustic_path,
+                                          NaiveF32 low_mid_xover_freq,
+                                          NaiveF32 high_damp_freq,
+                                          NaiveF32 dc_reverb_time,
+                                          NaiveF32 mid_freq_reverb_time);
 NaiveErr naive_fdn_reverb_set_input_gain(NaiveFdnReverb *self, NaiveF32 input_gain);
 NaiveErr naive_fdn_reverb_set_output_gain(NaiveFdnReverb *self, NaiveF32 output_gain);
 NaiveErr naive_fdn_reverb_set_dry_gain(NaiveFdnReverb *self, NaiveF32 dry_gain);

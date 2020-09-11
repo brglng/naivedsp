@@ -1,12 +1,66 @@
-[reverb-default-params]
-input = "冬天虽然宁静.wav"
-output = "reverb-default-params.wav"
+[reverb-small-room-sweep]
+input = "Sweep_-15dBFS_LR_Phase0_44k_16bit_2ch.wav"
+output = "reverb-small-room-sweep.wav"
+block-size = 256
+out-channels = 2
+pre-delay-time = 0.005
+num-delays = 16
+min-acoustic-path = 1.0
+max-acoustic-path = 10.0
+low-mid-xover-freq = 300.0
+high-damp-freq = 4000.0
+dc-reverb-time = 0.5
+mid-freq-reverb-time = 0.2
+input-gain = 1.0
+output-gain = 1.0
+dry-gain = 0.0
+wet-gain = 6.0
+
+[reverb-big-room-sweep]
+input = "Sweep_-15dBFS_LR_Phase0_44k_16bit_2ch.wav"
+output = "reverb-big-room-sweep.wav"
 block-size = 256
 out-channels = 2
 pre-delay-time = 0.01
 num-delays = 16
-max-acoustic-path = 60.0
 min-acoustic-path = 20.0
+max-acoustic-path = 60.0
+low-mid-xover-freq = 300.0
+high-damp-freq = 4000.0
+dc-reverb-time = 4.0
+mid-freq-reverb-time = 2.0
+input-gain = 1.0
+output-gain = 1.0
+dry-gain = 0.0
+wet-gain = 6.0
+
+[reverb-small-room-voice]
+input = "voice_44k_16bit_1ch.wav"
+output = "reverb-small-room-voice.wav"
+block-size = 256
+out-channels = 2
+pre-delay-time = 0.005
+num-delays = 16
+min-acoustic-path = 1.0
+max-acoustic-path = 10.0
+low-mid-xover-freq = 300.0
+high-damp-freq = 4000.0
+dc-reverb-time = 0.5
+mid-freq-reverb-time = 0.2
+input-gain = 1.0
+output-gain = 1.0
+dry-gain = 0.0
+wet-gain = 6.0
+
+[reverb-big-room-voice]
+input = "voice_44k_16bit_1ch.wav"
+output = "reverb-big-room-voice.wav"
+block-size = 256
+out-channels = 2
+pre-delay-time = 0.01
+num-delays = 16
+min-acoustic-path = 20.0
+max-acoustic-path = 60.0
 low-mid-xover-freq = 300.0
 high-damp-freq = 4000.0
 dc-reverb-time = 4.0
