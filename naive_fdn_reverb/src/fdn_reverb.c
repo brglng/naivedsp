@@ -614,7 +614,7 @@ NaiveErr naive_fdn_reverb_set_input_gain(NaiveFdnReverb *self, NaiveF32 input_ga
 NaiveErr naive_fdn_reverb_set_output_gain(NaiveFdnReverb *self, NaiveF32 output_gain)
 {
     for (NaiveI32 i = 0; i < self->num_delays; ++i) {
-        self->out_gains[i] = output_gain / (NaiveF32)self->num_delays;
+        self->out_gains[i] = sqrtf(output_gain / (NaiveF32)self->num_delays);
     }
     return NAIVE_OK;
 }

@@ -1,6 +1,6 @@
-[reverb-small-room-sweep]
+[reverb-sweep-small-room]
 input = "Sweep_-15dBFS_LR_Phase0_44k_16bit_2ch.wav"
-output = "reverb-small-room-sweep.wav"
+output = "reverb-sweep-small-room.wav"
 block-size = 256
 out-channels = 2
 pre-delay-time = 0.005
@@ -13,12 +13,12 @@ dc-reverb-time = 0.5
 mid-freq-reverb-time = 0.2
 input-gain = 1.0
 output-gain = 1.0
-dry-gain = 0.0
-wet-gain = 6.0
+dry-gain = 0.1
+wet-gain = 1.0
 
-[reverb-big-room-sweep]
+[reverb-sweep-big-room-sweep]
 input = "Sweep_-15dBFS_LR_Phase0_44k_16bit_2ch.wav"
-output = "reverb-big-room-sweep.wav"
+output = "reverb-sweep-big-room.wav"
 block-size = 256
 out-channels = 2
 pre-delay-time = 0.01
@@ -31,12 +31,12 @@ dc-reverb-time = 4.0
 mid-freq-reverb-time = 2.0
 input-gain = 1.0
 output-gain = 1.0
-dry-gain = 0.0
-wet-gain = 6.0
+dry-gain = 0.1
+wet-gain = 1.0
 
-[reverb-small-room-voice]
+[reverb-voice-small-room]
 input = "voice_44k_16bit_1ch.wav"
-output = "reverb-small-room-voice.wav"
+output = "reverb-voice-small-room.wav"
 block-size = 256
 out-channels = 2
 pre-delay-time = 0.005
@@ -49,12 +49,12 @@ dc-reverb-time = 0.5
 mid-freq-reverb-time = 0.2
 input-gain = 1.0
 output-gain = 1.0
-dry-gain = 0.0
-wet-gain = 6.0
+dry-gain = 0.1
+wet-gain = 1.0
 
-[reverb-big-room-voice]
+[reverb-voice-big-room-voice]
 input = "voice_44k_16bit_1ch.wav"
-output = "reverb-big-room-voice.wav"
+output = "reverb-voice-big-room.wav"
 block-size = 256
 out-channels = 2
 pre-delay-time = 0.01
@@ -67,5 +67,5 @@ dc-reverb-time = 4.0
 mid-freq-reverb-time = 2.0
 input-gain = 1.0
 output-gain = 1.0
-dry-gain = 0.0
-wet-gain = 6.0
+dry-gain = 0.1
+wet-gain = 1.0
