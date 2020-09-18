@@ -7,6 +7,7 @@
 
 typedef struct {
     NaiveStereoDelay obj;
+    void *scratch;
 } TestContext;
 
 NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
@@ -76,21 +77,26 @@ NaiveErr test_process(void *_context,
     memcpy(out[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
     *out_len = in_len;
 
-    return naive_stereo_delay_process(&context->obj, out[0], out[1], in_len);
+    return naive_stereo_delay_process(&context->obj, out[0], out[1], in_len, context->scratch);
 }
 
 int main(void)
 {
     NaiveErr err = 0;
-
     NaiveDefaultAllocator allocator;
-    naive_default_allocator_init(&allocator);
-
-    TestContext context;
-    err = naive_stereo_delay_init(&context.obj, &allocator, &naive_default_alloc, 256, 88200);
-
     NaiveTest test;
+    TestContext context;
+    NaiveI32 num_failed = 0;
 
+    err = naive_default_allocator_init(&allocator);
+    if (!err) {
+        err = naive_stereo_delay_init(&context.obj, &allocator, &naive_default_alloc, 88200);
+    }
+    if (!err) {
+        context.scratch = naive_default_alloc(&allocator, NAIVE_MEM_SCRATCH, NAIVE_STEREO_DELAY_SCRATCH_SIZE(256));
+        if (context.scratch == NULL)
+            err = NAIVE_ERR_NOMEM;
+    }
     if (!err) {
         err = naive_test_init(&test,
                               &naive_default_alloc,
@@ -108,7 +114,6 @@ int main(void)
                               &context);
     }
 
-    NaiveI32 num_failed = 0;
     if (!err) {
         num_failed = naive_test_run(&test);
     }

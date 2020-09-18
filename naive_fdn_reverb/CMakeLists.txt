@@ -1,4 +1,8 @@
-add_library(naive-fdn-reverb src/fdn_reverb.c)
+add_library(naive-fdn-reverb
+  src/fdn_reverb.c
+  src/early_reflection.c
+  )
+
 add_library(naivedsp::fdn-reverb ALIAS naive-fdn-reverb)
 
 set_property(TARGET naive-fdn-reverb PROPERTY EXPORT_NAME fdn-reverb)

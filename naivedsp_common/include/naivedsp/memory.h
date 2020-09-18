@@ -27,8 +27,6 @@ typedef struct _NaiveDefaultAllocator {
     NaiveUSize  _num_blocks_cap;
     NaiveUSize  num_blocks;
     void        **blocks;
-    NaiveUSize  scratch_size;
-    void        *scratch;
 } NaiveDefaultAllocator;
 
 NaiveErr naive_default_allocator_init(NaiveDefaultAllocator *self);

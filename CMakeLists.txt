@@ -64,7 +64,7 @@ add_subdirectory(naive_peq)
 add_subdirectory(naive_delay)
 add_subdirectory(naive_stereo_delay)
 add_subdirectory(naive_fdn_reverb)
-# add_subdirectory(naive_linkwitz_riley_geq)
+# add_subdirectory(naive_xover_geq)
 # add_subdirectory(naive_cascading_geq)
 # add_subdirectory(naive_fir_geq)
 

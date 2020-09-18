@@ -10,14 +10,14 @@ extern "C" {
 #include "naivedsp/math.h"
 #include "naivedsp/math_types.h"
 
+#define NAIVE_STEREO_DELAY_SCRATCH_SIZE(block_size_cap) (2 * NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (block_size_cap)))
+
 typedef struct {
-    NaiveI32        block_size_cap;
     NaiveI32        delay_len_cap;
     NaiveDelayBuf   left_in_delay;
     NaiveDelayBuf   left_out_delay;
     NaiveDelayBuf   right_in_delay;
     NaiveDelayBuf   right_out_delay;
-    NaiveF32*       scratch;
     NaiveI32        left_delay_len;
     NaiveF32        left_feedback_gain;
     NaiveF32        left_crossfeed_gain;
@@ -33,12 +33,12 @@ typedef struct {
 NaiveErr naive_stereo_delay_init(NaiveStereoDelay *self,
                                  void *alloc_context,
                                  NaiveAllocFunc *alloc,
-                                 NaiveI32 block_size_cap,
                                  NaiveI32 delay_len_cap);
 
 NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self,
                                     NaiveF32 *left_inout, NaiveF32 *right_inout,
-                                    NaiveI32 block_size);
+                                    NaiveI32 block_size,
+                                    void *scratch);
 
 void naive_stereo_delay_reset(NaiveStereoDelay *self);
 void naive_stereo_delay_set_default_params(NaiveStereoDelay *self);

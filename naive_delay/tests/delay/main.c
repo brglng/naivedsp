@@ -7,6 +7,7 @@
 
 typedef struct {
     NaiveDelay delay_obj;
+    void *scratch;
 } TestContext;
 
 NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
@@ -57,21 +58,26 @@ NaiveErr test_process(void *_context,
     memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
     *out_len = in_len;
 
-    return naive_delay_process(&context->delay_obj, out[0], in_len);
+    return naive_delay_process(&context->delay_obj, out[0], in_len, context->scratch);
 }
 
 int main(void)
 {
     NaiveErr err = 0;
-
     NaiveDefaultAllocator allocator;
-    naive_default_allocator_init(&allocator);
-
-    TestContext context;
-    err = naive_delay_init(&context.delay_obj, &allocator, &naive_default_alloc, 256, 88200);
-
+    NaiveI32 num_failed = 0;
     NaiveTest test;
+    TestContext context;
 
+    err = naive_default_allocator_init(&allocator);
+    if (!err) {
+        err = naive_delay_init(&context.delay_obj, &allocator, &naive_default_alloc, 88200);
+    }
+    if (!err) {
+        context.scratch = naive_default_alloc(&allocator, NAIVE_MEM_SCRATCH, NAIVE_DELAY_SCRATCH_SIZE(256, 88200));
+        if (!context.scratch)
+            err = NAIVE_ERR_NOMEM;
+    }
     if (!err) {
         err = naive_test_init(&test,
                               &naive_default_alloc,
@@ -88,8 +94,6 @@ int main(void)
                               &test_process,
                               &context);
     }
-
-    NaiveI32 num_failed = 0;
     if (!err) {
         num_failed = naive_test_run(&test);
     }

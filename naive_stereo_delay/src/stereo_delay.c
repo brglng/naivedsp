@@ -1,36 +1,27 @@
 #include <string.h>
 #include "naivedsp/stereo_delay.h"
 
-NAIVE_INLINE NaiveUSize naive_stereo_delay_scratch_size(NaiveI32 block_size_cap)
-{
-    return 2 * NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (NaiveUSize)block_size_cap);
-}
-
 NaiveErr naive_stereo_delay_init(NaiveStereoDelay *self,
                                  void *alloc_context,
                                  NaiveAllocFunc *alloc,
-                                 NaiveI32 block_size_cap,
                                  NaiveI32 delay_len_cap)
 {
     NaiveErr err = NAIVE_OK;
     NaiveErr err1 = NAIVE_OK;
 
-    self->block_size_cap = block_size_cap;
     self->delay_len_cap = delay_len_cap;
 
     err1 = naive_delay_buf_init(&self->left_in_delay, alloc_context, alloc, delay_len_cap);
     if (err1) err = err1;
 
-    err1 = naive_delay_buf_init(&self->left_out_delay, alloc_context, alloc, NAIVE_MAX(delay_len_cap, block_size_cap));
+    err1 = naive_delay_buf_init(&self->left_out_delay, alloc_context, alloc, delay_len_cap);
     if (err1) err = err1;
 
     err1 = naive_delay_buf_init(&self->right_in_delay, alloc_context, alloc, delay_len_cap);
     if (err1) err = err1;
 
-    err1 = naive_delay_buf_init(&self->right_out_delay, alloc_context, alloc, NAIVE_MAX(delay_len_cap, block_size_cap));
+    err1 = naive_delay_buf_init(&self->right_out_delay, alloc_context, alloc, delay_len_cap);
     if (err1) err = err1;
-
-    self->scratch = alloc(alloc_context, NAIVE_MEM_SCRATCH, naive_stereo_delay_scratch_size(block_size_cap));
 
     self->left_delay_len = 0;
     self->left_feedback_gain = 0.0f;
@@ -46,9 +37,9 @@ NaiveErr naive_stereo_delay_init(NaiveStereoDelay *self,
     return err;
 }
 
-NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, NaiveF32 *right, NaiveI32 block_size)
+NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, NaiveF32 *right, NaiveI32 block_size, void *scratch)
 {
-    if (block_size < 0 || block_size > self->block_size_cap) {
+    if (block_size < 0) {
         return NAIVE_ERR_INVALID_PARAMETER;
     }
 
@@ -66,11 +57,12 @@ NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, Naiv
 
     NaiveF32 *left_x = left;
     NaiveF32 *right_x = right;
-    NaiveF32 *left_y = self->scratch;
+    NaiveF32 *left_y = scratch;
     NaiveF32 *right_y = (NaiveF32 *)((NaiveUIntPtr)left_y + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (NaiveUSize)block_size));
 
     NaiveF32 *cur_left_x = left_x;
     NaiveF32 *cur_left_y = left_y;
+    
     while (cur_left_x < left + block_size && self->left_in_delay.len < left_delay_len) {
         NaiveI32 len = NAIVE_MIN(
             left_delay_len - self->left_in_delay.len,
@@ -84,18 +76,27 @@ NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, Naiv
     }
 
     while (cur_left_x < left + block_size && self->left_in_delay.len >= left_delay_len) {
-        NaiveI32 len = NAIVE_MIN(left_delay_len, (left + block_size - cur_left_x));
+        NaiveI32 len;
 
-        NaiveF32 *left_x_delayed = naive_delay_buf_front(&self->left_in_delay);
-        NaiveF32 *left_y_delayed = naive_delay_buf_front(&self->left_out_delay);
+        if (left_delay_len == 0) {
+            len = block_size;
+            for (NaiveI32 i = 0; i < len; i++) {
+                cur_left_y[i] = left_x[i] + left_feedback_gain * left_y[i];
+            }
+        } else {
+            len = NAIVE_MIN(left_delay_len, (left + block_size - cur_left_x));
 
-        for (NaiveI32 i = 0; i < len; i++) {
-            cur_left_y[i] = left_x_delayed[i] + left_feedback_gain * left_y_delayed[i];
+            NaiveF32 *left_x_delayed = naive_delay_buf_front(&self->left_in_delay);
+            NaiveF32 *left_y_delayed = naive_delay_buf_front(&self->left_out_delay);
+
+            for (NaiveI32 i = 0; i < len; i++) {
+                cur_left_y[i] = left_x_delayed[i] + left_feedback_gain * left_y_delayed[i];
+            }
+
+            naive_delay_buf_drain(&self->left_in_delay, len);
+            naive_delay_buf_drain(&self->left_out_delay, len);
+            naive_delay_buf_write(&self->left_in_delay, cur_left_x, len);
         }
-
-        naive_delay_buf_drain(&self->left_in_delay, len);
-        naive_delay_buf_drain(&self->left_out_delay, len);
-        naive_delay_buf_write(&self->left_in_delay, cur_left_x, len);
 
         cur_left_x += len;
         cur_left_y += len;
@@ -116,18 +117,27 @@ NaiveErr naive_stereo_delay_process(NaiveStereoDelay *self, NaiveF32 *left, Naiv
     }
 
     while (cur_right_x < right + block_size && self->right_in_delay.len >= right_delay_len) {
-        NaiveI32 len = NAIVE_MIN(right_delay_len, (right + block_size - cur_right_x));
+        NaiveI32 len;
 
-        NaiveF32 *right_x_delayed = naive_delay_buf_front(&self->right_in_delay);
-        NaiveF32 *right_y_delayed = naive_delay_buf_front(&self->right_out_delay);
+        if (left_delay_len == 0) {
+            len = block_size;
+            for (NaiveI32 i = 0; i < len; i++) {
+                cur_right_y[i] = right_x[i] + right_feedback_gain * right_y[i];
+            }
+        } else {
+            len = NAIVE_MIN(right_delay_len, (right + block_size - cur_right_x));
 
-        for (NaiveI32 i = 0; i < len; i++) {
-            cur_right_y[i] = right_x_delayed[i] + right_feedback_gain * right_y_delayed[i];
+            NaiveF32 *right_x_delayed = naive_delay_buf_front(&self->right_in_delay);
+            NaiveF32 *right_y_delayed = naive_delay_buf_front(&self->right_out_delay);
+
+            for (NaiveI32 i = 0; i < len; i++) {
+                cur_right_y[i] = right_x_delayed[i] + right_feedback_gain * right_y_delayed[i];
+            }
+
+            naive_delay_buf_drain(&self->right_in_delay, len);
+            naive_delay_buf_drain(&self->right_out_delay, len);
+            naive_delay_buf_write(&self->right_in_delay, cur_right_x, len);
         }
-
-        naive_delay_buf_drain(&self->right_in_delay, len);
-        naive_delay_buf_drain(&self->right_out_delay, len);
-        naive_delay_buf_write(&self->right_in_delay, cur_right_x, len);
 
         cur_right_x += len;
         cur_right_y += len;

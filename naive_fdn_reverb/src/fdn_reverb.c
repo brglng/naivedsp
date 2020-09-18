@@ -136,35 +136,28 @@ static NAIVE_CONST NaiveI32 PRIMES[] = {
     9901, 9907, 9923, 9929, 9931, 9941, 9949, 9967, 9973,
 };
 
-/** Scratch buffer size used by NaiveFdnReverb
- *
- * @param   num_delays_cap  Maximum allowed number of delays
- * @param   delay_len_cap   Maximum allowed delay length
- * @param   block_size_cap  Maximum allowed block size
- *
- * @return the size of the scratch buffer
- */
-#define NAIVE_FDN_REVERB_SCRATCH_SIZE(num_delays_cap, block_size_cap) (             \
-    NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (block_size_cap)) * 2 +                   \
-    NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (block_size_cap)) * num_delays_cap * 3 +  \
-    NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * (block_size_cap)) * 2)
-
 NaiveErr naive_fdn_reverb_init(
     NaiveFdnReverb *self,
     void *alloc_context,
     NaiveAllocFunc alloc,
     NaiveI32 sample_rate,
-    NaiveI32 block_size_cap,
     NaiveI32 pre_delay_len_cap,
+    NaiveI32 early_num_taps_cap,
+    NaiveI32 early_delay_len_cap,
     NaiveI32 num_delays_cap,
     NaiveI32 delay_len_cap)
 {
     NaiveErr err = NAIVE_OK;
 
     self->sample_rate = sample_rate;
-    self->block_size_cap = block_size_cap;
-    self->num_delays_cap = num_delays_cap;
-    self->pre_delay_len = 0;
+
+    self->left_to_left_gain = 1.0f;
+    self->left_to_right_gain = 0.0f;
+    self->right_to_left_gain = 0.0f;
+    self->right_to_right_gain = 1.0f;
+
+    self->left_pre_delay_len = 0;
+    self->right_pre_delay_len = 0;
 
     NaiveErr rc = naive_delay_buf_init(&self->left_pre_delay_buf, alloc_context, alloc, pre_delay_len_cap);
     if (!err && rc)
@@ -174,12 +167,22 @@ NaiveErr naive_fdn_reverb_init(
     if (!err && rc)
         err = rc;
 
+    rc = naive_early_reflection_init(&self->early_reflection,
+                                     alloc_context,
+                                     alloc,
+                                     early_num_taps_cap,
+                                     early_delay_len_cap);
+    if (!err && rc)
+        err = rc;
+
+    self->left_early_send_gain = 1.0f;
+    self->right_early_send_gain = 1.0f;
+
+    self->num_delays_cap = num_delays_cap;
     self->num_delays = 0;
     self->delay_lens = alloc(alloc_context, NAIVE_MEM_PARAM, sizeof(NaiveI32) * (NaiveUSize)num_delays_cap);
     if (self->delay_lens) {
-        for (NaiveI32 i = 0; i < num_delays_cap; ++i) {
-            self->delay_lens[i] = 0;
-        }
+        memset(self->delay_lens, 0, sizeof(NaiveI32) * (NaiveUSize)num_delays_cap);
     } else if (!err) {
         err = NAIVE_ERR_NOMEM;
     }
@@ -233,25 +236,24 @@ NaiveErr naive_fdn_reverb_init(
         err = NAIVE_ERR_NOMEM;
     }
 
-    self->dry_gain = 1.0f;
-    self->wet_gain = 0.0f;
+    self->left_dry_gain = 1.0f;
+    self->left_early_gain = 0.0f;
+    self->left_late_gain = 0.0f;
+    self->right_dry_gain = 1.0f;
+    self->right_early_gain = 0.0f;
+    self->right_late_gain = 0.0f;
+
     self->min_acoustic_path = 0.0f;
     self->max_acoustic_path = 0.0f;
-    self->low_mid_xover_freq = 1.0f;
-    self->high_damp_freq = 1.0f;
-    self->dc_reverb_time = 0.0f;
-    self->mid_freq_reverb_time = 0.0f;
 
     naive_fdn_reverb_set_default_params(self);
-
-    self->scratch = alloc(alloc_context, NAIVE_MEM_SCRATCH, NAIVE_FDN_REVERB_SCRATCH_SIZE(num_delays_cap, block_size_cap));
 
     return err;
 }
 
-NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, NaiveF32 *right_in, NaiveF32 *left_out, NaiveF32 *right_out, NaiveI32 block_size)
+NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, NaiveF32 *right_in, NaiveF32 *left_out, NaiveF32 *right_out, NaiveI32 block_size, void *scratch)
 {
-    if (block_size < 0 || block_size > self->block_size_cap)
+    if (block_size < 0)
         return NAIVE_ERR_INVALID_PARAMETER;
 
     if (block_size == 0) {
@@ -259,12 +261,27 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
     }
 
     NaiveI32 num_delays = self->num_delays;
-    NaiveF32 *left_predelayed = self->scratch;
-    NaiveF32 *right_predelayed = (NaiveF32*)((NaiveUIntPtr)left_predelayed + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
-    NaiveF32 *predelayed[] = {left_predelayed, right_predelayed};
+
+    NaiveF32 *left_predelayed = scratch;
+    NaiveF32 *right_predelayed = (NaiveF32 *)((NaiveUIntPtr)left_predelayed + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+
+    NaiveF32 *left_crosstalked = (NaiveF32*)((NaiveUIntPtr)right_predelayed + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+    NaiveF32 *right_crosstalked = (NaiveF32*)((NaiveUIntPtr)left_crosstalked + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+
+    NaiveF32 *early_scratch = left_crosstalked;
+
+    // early reflection outputs (reuse crosstalk buffers)
+    NaiveF32 *left_early_out = (NaiveF32*)((NaiveUIntPtr)early_scratch + NAIVE_EARLY_REFLECTION_SCRATCH_SIZE(block_size));
+    NaiveF32 *right_early_out = (NaiveF32*)((NaiveUIntPtr)left_early_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+
+    // early reflection send outputs
+    NaiveF32 *left_early_send_out = (NaiveF32*)((NaiveUIntPtr)right_early_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+    NaiveF32 *right_early_send_out = (NaiveF32*)((NaiveUIntPtr)left_early_send_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+
+    NaiveF32 *early_send_out[] = {left_early_out, right_early_out};
 
     // input buffer of each delay line
-    NaiveF32 *x = (NaiveF32*)((NaiveUIntPtr)right_predelayed + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
+    NaiveF32 *x = (NaiveF32*)((NaiveUIntPtr)right_early_send_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
 
     // delayed input of each delay line
     NaiveF32 *xd = (NaiveF32 *)((NaiveUIntPtr)x + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size) * (NaiveUSize)num_delays);
@@ -279,44 +296,84 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
     NaiveF32 *feedback_mat = self->feedback_mat;
     NaiveF32 *in_gains = self->in_gains;
     NaiveF32 *out_gains = self->out_gains;
-    NaiveF32 dry_gain = self->dry_gain;
-    NaiveF32 wet_gain = self->wet_gain;
-
-    // write to pre delay buffers if not enough pre-delayed data
+    
+    // crosstalk
     NaiveI32 n = 0;
-    while (n < block_size && self->left_pre_delay_buf.len < self->pre_delay_len) {
-        NaiveI32 len = NAIVE_MIN(self->pre_delay_len - self->left_pre_delay_buf.len,
-                                 block_size - n);
-        naive_delay_buf_write(&self->left_pre_delay_buf, &left_in[n], len);
-        naive_delay_buf_write(&self->right_pre_delay_buf, &right_in[n], len);
-        memset(&left_predelayed[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
-        memset(&right_predelayed[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
-        n += len;
+    for (n = 0; n < block_size; ++n) {
+        left_crosstalked[n] = self->left_to_left_gain * left_in[n] + self->right_to_left_gain * right_in[n];
+        right_crosstalked[n] = self->left_to_right_gain * left_in[n] + self->right_to_right_gain * right_in[n];
     }
 
-    // read pre deleyed data
-    while (n < block_size && self->left_pre_delay_buf.len >= self->pre_delay_len) {
-        NaiveI32 len = NAIVE_MIN(self->pre_delay_len, block_size - n);
-        memcpy(&left_predelayed[n], naive_delay_buf_front(&self->left_pre_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
-        memcpy(&right_predelayed[n], naive_delay_buf_front(&self->right_pre_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
-        naive_delay_buf_drain(&self->left_pre_delay_buf, len);
-        naive_delay_buf_drain(&self->right_pre_delay_buf, len);
-        naive_delay_buf_write(&self->left_pre_delay_buf, &left_in[n], len);
-        naive_delay_buf_write(&self->right_pre_delay_buf, &right_in[n], len);
-        n += len;
+    // left pre-delay
+    if (self->left_pre_delay_len == 0) {
+        memcpy(left_predelayed, left_crosstalked, sizeof(NaiveF32) * (NaiveUSize)block_size);
+    } else {
+        // write to pre delay buffers if not enough pre-delayed data
+        n = 0;
+        while (n < block_size && self->left_pre_delay_buf.len < self->left_pre_delay_len) {
+            NaiveI32 len = NAIVE_MIN(self->left_pre_delay_len - self->left_pre_delay_buf.len, block_size - n);
+            naive_delay_buf_write(&self->left_pre_delay_buf, &left_crosstalked[n], len);
+            memset(&left_predelayed[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
+            n += len;
+        }
+        // read pre deleyed data
+        while (n < block_size && self->left_pre_delay_buf.len >= self->left_pre_delay_len) {
+            NaiveI32 len = NAIVE_MIN(self->left_pre_delay_len, block_size - n);
+            memcpy(&left_predelayed[n], naive_delay_buf_front(&self->left_pre_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
+            naive_delay_buf_drain(&self->left_pre_delay_buf, len);
+            naive_delay_buf_write(&self->left_pre_delay_buf, &left_crosstalked[n], len);
+            n += len;
+        }
     }
 
-    // apply delay line input gains
+    // right pre-delay
+    if (self->right_pre_delay_len == 0) {
+        memcpy(right_predelayed, right_crosstalked, sizeof(NaiveF32) * (NaiveUSize)block_size);
+    } else {
+        // write to pre delay buffers if not enough pre-delayed data
+        n = 0;
+        while (n < block_size && self->right_pre_delay_buf.len < self->right_pre_delay_len) {
+            NaiveI32 len = NAIVE_MIN(self->right_pre_delay_len - self->right_pre_delay_buf.len, block_size - n);
+            naive_delay_buf_write(&self->right_pre_delay_buf, &right_crosstalked[n], len);
+            memset(&right_predelayed[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
+            n += len;
+        }
+        // read pre deleyed data
+        while (n < block_size && self->right_pre_delay_buf.len >= self->right_pre_delay_len) {
+            NaiveI32 len = NAIVE_MIN(self->right_pre_delay_len, block_size - n);
+            memcpy(&right_predelayed[n], naive_delay_buf_front(&self->right_pre_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
+            naive_delay_buf_drain(&self->right_pre_delay_buf, len);
+            naive_delay_buf_write(&self->right_pre_delay_buf, &right_crosstalked[n], len);
+            n += len;
+        }
+    }
+
+    // early reflection
+    NaiveErr err = naive_early_reflection_process(&self->early_reflection,
+                                                  left_predelayed, right_predelayed,
+                                                  left_early_out, right_early_out,
+                                                  left_early_send_out, right_early_send_out,
+                                                  block_size,
+                                                  early_scratch);
+    if (err)
+        return err;
+
+    // apply early reflection send gains
+    naive_gain(left_early_send_out, block_size, self->left_early_send_gain);
+    naive_gain(right_early_send_out, block_size, self->right_early_send_gain);
+
+    // fdn delay line input gains
     for (NaiveI32 i = 0; i < num_delays; ++i) {
         NaiveF32 *xi = (NaiveF32*)((NaiveUIntPtr)x + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size) * (NaiveUSize)i);
 
-        // select predelayed left/right for input to each delay line
-        NaiveF32 *u = predelayed[i & 1];
+        // select left/right early reflection send output to feed each delay line
+        NaiveF32 *u = early_send_out[i & 1];
 
         memcpy(xi, u, sizeof(NaiveF32) * (NaiveUSize)block_size);
         naive_gain(xi, block_size, in_gains[i]);
     }
 
+    // fdn core processing
     n = 0;
     while (n < block_size) {
         NaiveI32 len1 = NAIVE_MIN(self->delay_lens[0], block_size - n);
@@ -331,20 +388,23 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
 
             NaiveI32 nn = 0;
 
-            // if not enough delayed data, write to the delay buffer
-            while (nn < len1 && self->delay_bufs[i].len < self->delay_lens[i]) {
-                NaiveI32 len2 = NAIVE_MIN(self->delay_lens[i] - self->delay_bufs[i].len, len1 - nn);
-                memset(&xdi[n + nn], 0, sizeof(NaiveF32) * (NaiveUSize)len2);
-                naive_delay_buf_write(&self->delay_bufs[i], &xi[n + nn], len2);
-                nn += len2;
-            }
-
-            // read delayed data
-            while (nn < len1 && self->delay_bufs[i].len >= self->delay_lens[i]) {
-                NaiveI32 len2 = NAIVE_MIN(self->delay_lens[i], len1 - nn);
-                memcpy(&xdi[n + nn], naive_delay_buf_front(&self->delay_bufs[i]), sizeof(NaiveF32) * (NaiveUSize)len2);
-                naive_delay_buf_drain(&self->delay_bufs[i], len2);
-                nn += len2;
+            if (self->delay_lens[i] == 0) {
+                memcpy(&xdi[n], &xi[n], sizeof(NaiveF32) * (NaiveUSize)len1);
+            } else {
+                // if not enough delayed data, write to the delay buffer
+                while (nn < len1 && self->delay_bufs[i].len < self->delay_lens[i]) {
+                    NaiveI32 len2 = NAIVE_MIN(self->delay_lens[i] - self->delay_bufs[i].len, len1 - nn);
+                    memset(&xdi[n + nn], 0, sizeof(NaiveF32) * (NaiveUSize)len2);
+                    naive_delay_buf_write(&self->delay_bufs[i], &xi[n + nn], len2);
+                    nn += len2;
+                }
+                // read delayed data
+                while (nn < len1 && self->delay_bufs[i].len >= self->delay_lens[i]) {
+                    NaiveI32 len2 = NAIVE_MIN(self->delay_lens[i], len1 - nn);
+                    memcpy(&xdi[n + nn], naive_delay_buf_front(&self->delay_bufs[i]), sizeof(NaiveF32) * (NaiveUSize)len2);
+                    naive_delay_buf_drain(&self->delay_bufs[i], len2);
+                    nn += len2;
+                }
             }
         }
 
@@ -367,12 +427,16 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
 
             // mix with the delay line input and write to the delay buffer
             naive_mix(&xi[n], &si[n], len1);
-            naive_delay_buf_write(&self->delay_bufs[i], &xi[n], len1);
+
+            if (self->delay_lens[i] > 0) {
+                naive_delay_buf_write(&self->delay_bufs[i], &xi[n], len1);
+            }
         }
 
         n += len1;
     }
 
+    // fdn delay line out gains
     memset(yl, 0, sizeof(NaiveF32) * (NaiveUSize)block_size);
     for (NaiveI32 i = 0; i < num_delays; i += 2) {
         NaiveF32 *si = (NaiveF32*)((NaiveUIntPtr)s + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size) * (NaiveUSize)i);
@@ -389,12 +453,16 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
         }
     }
 
-    // naive_peq_process(&self->left_wet_eq_states, &params->wet_eq_coeffs, yl, block_size, wet_eq_scratch);
-    // naive_peq_process(&self->right_wet_eq_states, &params->wet_eq_coeffs, yr, block_size, wet_eq_scratch);
-
+    // final mixing
+    NaiveF32 left_dry_gain = self->left_dry_gain;
+    NaiveF32 left_early_gain = self->left_early_gain;
+    NaiveF32 left_late_gain = self->left_late_gain;
+    NaiveF32 right_dry_gain = self->right_dry_gain;
+    NaiveF32 right_early_gain = self->right_early_gain;
+    NaiveF32 right_late_gain = self->right_late_gain;
     for (NaiveI32 nn = 0; nn < block_size; ++nn) {
-        left_out[nn] = wet_gain * yl[nn] + dry_gain * left_in[nn];
-        right_out[nn] = wet_gain * yr[nn] + dry_gain * right_in[nn];
+        left_out[nn] = left_dry_gain * left_in[nn] + left_early_gain * left_early_out[nn] + left_late_gain * yl[nn];
+        right_out[nn] = right_dry_gain * right_in[nn] + right_early_gain * right_early_out[nn] + right_late_gain * yr[nn];
     }
 
     return NAIVE_OK;
@@ -404,10 +472,76 @@ void naive_fdn_reverb_reset(NaiveFdnReverb *self)
 {
     naive_delay_buf_reset(&self->left_pre_delay_buf);
     naive_delay_buf_reset(&self->right_pre_delay_buf);
+    naive_early_reflection_reset(&self->early_reflection);
     for (NaiveI32 i = 0; i < self->num_delays_cap; ++i) {
         naive_delay_buf_reset(&self->delay_bufs[i]);
         naive_cascaded_iir_1st_df1_reset(&self->delay_filters[i]);
     }
+}
+
+NaiveErr naive_fdn_reverb_set_balance_crosstalk(NaiveFdnReverb *self,
+                                                NaiveF32 balance,
+                                                NaiveF32 crosstalk_gain)
+{
+    if (balance < 0 || balance > 1.0f)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    if (crosstalk_gain < 0 || crosstalk_gain > 1.0f)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    self->left_to_right_gain = crosstalk_gain;
+    self->right_to_left_gain = crosstalk_gain;
+    self->left_to_left_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * cosf(balance * NAIVE_PI / 2.0f);
+    self->right_to_right_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * sinf(balance * NAIVE_PI / 2.0f);
+
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_left_pre_delay_time(NaiveFdnReverb *self, NaiveF32 left_pre_delay_time)
+{
+    if (left_pre_delay_time < 0)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    NaiveI32 delay_len = (NaiveI32)(left_pre_delay_time * (NaiveF32)self->sample_rate + 0.5f);
+
+    if (delay_len > self->left_pre_delay_buf.size)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    self->left_pre_delay_len = delay_len;
+
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_right_pre_delay_time(NaiveFdnReverb *self, NaiveF32 right_pre_delay_time)
+{
+    if (right_pre_delay_time < 0)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    NaiveI32 delay_len = (NaiveI32)(right_pre_delay_time * (NaiveF32)self->sample_rate + 0.5f);
+
+    if (delay_len > self->right_pre_delay_buf.size)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    self->right_pre_delay_len = delay_len;
+
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_early_reflection_preset(NaiveFdnReverb *self, NaiveEarlyReflectionType type)
+{
+    return naive_early_reflection_set_preset(&self->early_reflection, type, self->sample_rate);
+}
+
+NaiveErr naive_fdn_reverb_set_left_early_reflection_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
+{
+    self->left_early_send_gain = gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_right_early_reflection_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
+{
+    self->right_early_send_gain = gain;
+    return NAIVE_OK;
 }
 
 NAIVE_INLINE void sub_hadamard_multiply_scalar(NaiveF32 *hadamard, NaiveI32 row_stride, NaiveI32 order, NaiveF32 scalar)
@@ -447,14 +581,14 @@ NAIVE_INLINE void make_hadamard(NaiveF32 *hadamard, NaiveI32 order) {
     make_sub_hadamard(hadamard, order, order);
 }
 
-NaiveErr naive_fdn_reverb_set_room_params(NaiveFdnReverb *self,
-                                          NaiveI32 num_delays,
-                                          NaiveF32 min_acoustic_path,
-                                          NaiveF32 max_acoustic_path,
-                                          NaiveF32 low_mid_xover_freq,
-                                          NaiveF32 high_damp_freq,
-                                          NaiveF32 dc_reverb_time,
-                                          NaiveF32 mid_freq_reverb_time)
+NaiveErr naive_fdn_reverb_set_diffuse_params(NaiveFdnReverb *self,
+                                             NaiveI32 num_delays,
+                                             NaiveF32 min_acoustic_path,
+                                             NaiveF32 max_acoustic_path,
+                                             NaiveF32 low_mid_xover_freq,
+                                             NaiveF32 high_damp_freq,
+                                             NaiveF32 dc_reverb_time,
+                                             NaiveF32 mid_freq_reverb_time)
 {
     if (num_delays > self->num_delays_cap)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -560,11 +694,6 @@ NaiveErr naive_fdn_reverb_set_room_params(NaiveFdnReverb *self,
         memcpy(self->delay_lens, delay_lens, sizeof(NaiveI32) * (NaiveUSize)num_delays);
     }
 
-    self->low_mid_xover_freq = low_mid_xover_freq;
-    self->high_damp_freq = high_damp_freq;
-    self->dc_reverb_time = dc_reverb_time;
-    self->mid_freq_reverb_time = mid_freq_reverb_time;
-
     // https://ccrma.stanford.edu/~jos/pasp/Zita_Rev1_Delay_Line_Filters.html
     for (NaiveI32 i = 0; i < num_delays; ++i) {
         NaiveF32 pl = (1 - NAIVE_PI * low_mid_xover_freq / (NaiveF32)self->sample_rate) / (1 + NAIVE_PI * low_mid_xover_freq / (NaiveF32)self->sample_rate);
@@ -588,21 +717,6 @@ NaiveErr naive_fdn_reverb_set_room_params(NaiveFdnReverb *self,
     return NAIVE_OK;
 }
 
-NaiveErr naive_fdn_reverb_set_pre_delay_time(NaiveFdnReverb *self, NaiveF32 pre_delay_time)
-{
-    if (pre_delay_time < 0)
-        return NAIVE_ERR_INVALID_PARAMETER;
-
-    NaiveI32 delay_len = (NaiveI32)(pre_delay_time * (NaiveF32)self->sample_rate);
-
-    if (delay_len > self->left_pre_delay_buf.size)
-        return NAIVE_ERR_INVALID_PARAMETER;
-
-    self->pre_delay_len = delay_len;
-
-    return NAIVE_OK;
-}
-
 NaiveErr naive_fdn_reverb_set_input_gain(NaiveFdnReverb *self, NaiveF32 input_gain)
 {
     for (NaiveI32 i = 0; i < self->num_delays; ++i) {
@@ -619,31 +733,88 @@ NaiveErr naive_fdn_reverb_set_output_gain(NaiveFdnReverb *self, NaiveF32 output_
     return NAIVE_OK;
 }
 
-NaiveErr naive_fdn_reverb_set_dry_gain(NaiveFdnReverb *self, NaiveF32 dry_gain)
+NaiveErr naive_fdn_reverb_set_left_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
 {
-    self->dry_gain = dry_gain;
+    return naive_early_reflection_set_left_send_time(&self->early_reflection, send_time, self->sample_rate);
+}
+
+NaiveErr naive_fdn_reverb_set_right_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
+{
+    return naive_early_reflection_set_right_send_time(&self->early_reflection, send_time, self->sample_rate);
+}
+
+NaiveErr naive_fdn_reverb_set_left_early_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
+{
+    self->left_early_send_gain = gain;
     return NAIVE_OK;
 }
 
-NaiveErr naive_fdn_reverb_set_wet_gain(NaiveFdnReverb *self, NaiveF32 wet_gain)
+NaiveErr naive_fdn_reverb_set_right_early_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
 {
-    self->wet_gain = wet_gain;
+    self->right_early_send_gain = gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_left_dry_gain(NaiveFdnReverb *self, NaiveF32 dry_gain)
+{
+    self->left_dry_gain = dry_gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_left_early_gain(NaiveFdnReverb *self, NaiveF32 early_gain)
+{
+    self->left_early_gain = early_gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_left_late_gain(NaiveFdnReverb *self, NaiveF32 late_gain)
+{
+    self->left_late_gain = late_gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_right_dry_gain(NaiveFdnReverb *self, NaiveF32 dry_gain)
+{
+    self->left_dry_gain = dry_gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_right_early_gain(NaiveFdnReverb *self, NaiveF32 early_gain)
+{
+    self->left_early_gain = early_gain;
+    return NAIVE_OK;
+}
+
+NaiveErr naive_fdn_reverb_set_right_late_gain(NaiveFdnReverb *self, NaiveF32 late_gain)
+{
+    self->left_late_gain = late_gain;
     return NAIVE_OK;
 }
 
 void naive_fdn_reverb_set_default_params(NaiveFdnReverb *self)
 {
-    naive_fdn_reverb_set_pre_delay_time(self, 0.005f);
-    naive_fdn_reverb_set_room_params(self,
-                                     16,
-                                     1.0f,
-                                     10.0f,
-                                     300.0f,
-                                     4000.0f,
-                                     1.2f,
-                                     1.0f);
+    naive_fdn_reverb_set_balance_crosstalk(self, 0.5, 0.125f);
+    naive_fdn_reverb_set_left_pre_delay_time(self, 0.005f);
+    naive_fdn_reverb_set_right_pre_delay_time(self, 0.005f);
+    naive_fdn_reverb_set_early_reflection_preset(self, NAIVE_EARLY_REFLECTION_TYPE_MOORER_HALL);
+    naive_early_reflection_set_left_send_time(&self->early_reflection, 0.06f, self->sample_rate);
+    naive_early_reflection_set_right_send_time(&self->early_reflection, 0.06f, self->sample_rate);
+    self->left_early_send_gain = 0.707f;
+    self->right_early_send_gain = 0.707f;
+    naive_fdn_reverb_set_diffuse_params(self,
+                                        16,
+                                        1.0f,
+                                        10.0f,
+                                        300.0f,
+                                        4000.0f,
+                                        1.2f,
+                                        1.0f);
     naive_fdn_reverb_set_input_gain(self, 1.0f);
     naive_fdn_reverb_set_output_gain(self, 1.0f);
-    self->dry_gain = 0.293f;
-    self->wet_gain = 0.707f;
+    self->left_dry_gain = 0.125f;
+    self->left_early_gain = 1.0f;
+    self->left_late_gain = 1.0f;
+    self->right_dry_gain = 0.125f;
+    self->right_early_gain = 1.0f;
+    self->right_late_gain = 1.0f;
 }
