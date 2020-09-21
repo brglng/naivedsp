@@ -278,7 +278,7 @@ NaiveErr naive_fdn_reverb_process(NaiveFdnReverb *self, NaiveF32 *left_in, Naive
     NaiveF32 *left_early_send_out = (NaiveF32*)((NaiveUIntPtr)right_early_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
     NaiveF32 *right_early_send_out = (NaiveF32*)((NaiveUIntPtr)left_early_send_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
 
-    NaiveF32 *early_send_out[] = {left_early_out, right_early_out};
+    NaiveF32 *early_send_out[] = {left_in, right_in};
 
     // input buffer of each delay line
     NaiveF32 *x = (NaiveF32*)((NaiveUIntPtr)right_early_send_out + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
@@ -491,8 +491,8 @@ NaiveErr naive_fdn_reverb_set_balance_crosstalk(NaiveFdnReverb *self,
 
     self->left_to_right_gain = crosstalk_gain;
     self->right_to_left_gain = crosstalk_gain;
-    self->left_to_left_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * cosf(balance * NAIVE_PI / 2.0f);
-    self->right_to_right_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * sinf(balance * NAIVE_PI / 2.0f);
+    self->left_to_left_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * cosf(balance * NAIVE_PI / 2.0f) * sqrtf(2.0f);
+    self->right_to_right_gain = sqrtf(1 - crosstalk_gain * crosstalk_gain) * sinf(balance * NAIVE_PI / 2.0f) * sqrtf(2.0f);
 
     return NAIVE_OK;
 }
@@ -525,11 +525,6 @@ NaiveErr naive_fdn_reverb_set_right_pre_delay_time(NaiveFdnReverb *self, NaiveF3
     self->right_pre_delay_len = delay_len;
 
     return NAIVE_OK;
-}
-
-NaiveErr naive_fdn_reverb_set_early_reflection_preset(NaiveFdnReverb *self, NaiveEarlyReflectionType type)
-{
-    return naive_early_reflection_set_preset(&self->early_reflection, type, self->sample_rate);
 }
 
 NaiveErr naive_fdn_reverb_set_left_early_reflection_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
@@ -702,14 +697,12 @@ NaiveErr naive_fdn_reverb_set_diffuse_params(NaiveFdnReverb *self,
         self->delay_filters[i].coeffs[0].b0 = gm + (g0 - gm) * (1 - pl) / 2.0f;
         self->delay_filters[i].coeffs[0].b1 = -gm * pl + (g0 - gm) * (1 - pl) / 2.0f;
         self->delay_filters[i].coeffs[0].a1 = -pl;
-        self->delay_filters[i].gain = 1.0f;
 
         NaiveF32 neg_half_b = (1 - gm * gm * cosf(2 * NAIVE_PI * high_damp_freq / (NaiveF32)self->sample_rate)) / (1 - gm * gm);
         NaiveF32 ph = neg_half_b - sqrtf(neg_half_b * neg_half_b - 1.0f);
         self->delay_filters[i].coeffs[1].b0 = 1 - ph;
         self->delay_filters[i].coeffs[1].b1 = 0;
         self->delay_filters[i].coeffs[1].a1 = -ph;
-        self->delay_filters[i].gain = 1.0f;
 
         self->delay_filters[i].num_fos = 2;
     }
@@ -731,16 +724,6 @@ NaiveErr naive_fdn_reverb_set_output_gain(NaiveFdnReverb *self, NaiveF32 output_
         self->out_gains[i] = sqrtf(output_gain / (NaiveF32)self->num_delays);
     }
     return NAIVE_OK;
-}
-
-NaiveErr naive_fdn_reverb_set_left_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
-{
-    return naive_early_reflection_set_left_send_time(&self->early_reflection, send_time, self->sample_rate);
-}
-
-NaiveErr naive_fdn_reverb_set_right_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
-{
-    return naive_early_reflection_set_right_send_time(&self->early_reflection, send_time, self->sample_rate);
 }
 
 NaiveErr naive_fdn_reverb_set_left_early_send_gain(NaiveFdnReverb *self, NaiveF32 gain)
@@ -775,19 +758,19 @@ NaiveErr naive_fdn_reverb_set_left_late_gain(NaiveFdnReverb *self, NaiveF32 late
 
 NaiveErr naive_fdn_reverb_set_right_dry_gain(NaiveFdnReverb *self, NaiveF32 dry_gain)
 {
-    self->left_dry_gain = dry_gain;
+    self->right_dry_gain = dry_gain;
     return NAIVE_OK;
 }
 
 NaiveErr naive_fdn_reverb_set_right_early_gain(NaiveFdnReverb *self, NaiveF32 early_gain)
 {
-    self->left_early_gain = early_gain;
+    self->right_early_gain = early_gain;
     return NAIVE_OK;
 }
 
 NaiveErr naive_fdn_reverb_set_right_late_gain(NaiveFdnReverb *self, NaiveF32 late_gain)
 {
-    self->left_late_gain = late_gain;
+    self->right_late_gain = late_gain;
     return NAIVE_OK;
 }
 
@@ -796,7 +779,12 @@ void naive_fdn_reverb_set_default_params(NaiveFdnReverb *self)
     naive_fdn_reverb_set_balance_crosstalk(self, 0.5, 0.125f);
     naive_fdn_reverb_set_left_pre_delay_time(self, 0.005f);
     naive_fdn_reverb_set_right_pre_delay_time(self, 0.005f);
-    naive_fdn_reverb_set_early_reflection_preset(self, NAIVE_EARLY_REFLECTION_TYPE_MOORER_HALL);
+    naive_fdn_reverb_set_early_reflection_preset(self,
+                                                 NAIVE_EARLY_REFLECTION_TYPE_MOORER_HALL,
+                                                 300.0f,
+                                                 4000.0f,
+                                                 1.2f,
+                                                 1.0f);
     naive_early_reflection_set_left_send_time(&self->early_reflection, 0.06f, self->sample_rate);
     naive_early_reflection_set_right_send_time(&self->early_reflection, 0.06f, self->sample_rate);
     self->left_early_send_gain = 0.707f;

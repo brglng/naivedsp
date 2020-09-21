@@ -97,24 +97,32 @@ NaiveErr naive_early_reflection_init(NaiveEarlyReflection *self,
     if (!err && err1)
         err = err1;
 
-    naive_iir_2nd_coeffs_init(&self->left_lpf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->left_send_lpf_states);
-    naive_iir_2nd_df1_states_init(&self->left_out_lpf_states);
-    naive_iir_2nd_coeffs_init(&self->right_lpf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->right_send_lpf_states);
-    naive_iir_2nd_df1_states_init(&self->right_out_lpf_states);
-    naive_iir_2nd_coeffs_init(&self->left_hpf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->left_send_hpf_states);
-    naive_iir_2nd_df1_states_init(&self->left_out_hpf_states);
-    naive_iir_2nd_coeffs_init(&self->right_hpf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->right_send_hpf_states);
-    naive_iir_2nd_df1_states_init(&self->right_out_hpf_states);
-    naive_iir_2nd_coeffs_init(&self->left_apf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->left_send_apf_states);
-    naive_iir_2nd_df1_states_init(&self->left_out_apf_states);
-    naive_iir_2nd_coeffs_init(&self->right_apf_coeffs);
-    naive_iir_2nd_df1_states_init(&self->right_send_apf_states);
-    naive_iir_2nd_df1_states_init(&self->right_out_apf_states);
+    self->left_send_len = 0;
+    self->right_send_len = 0;
+    self->left_send_delay_len = 0;
+    self->right_send_delay_len = 0;
+
+    self->left_delay_filters = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveCascadedIir1stDf1) * (NaiveUSize)num_taps_cap);
+    if (self->left_delay_filters != NULL) {
+        for (NaiveI32 i = 0; i < num_taps_cap; ++i) {
+            err1 = naive_cascaded_iir_1st_df1_init(&self->left_delay_filters[i], alloc_context, alloc, 2);
+            if (!err && err1)
+                err = err1;
+        }
+    } else if (!err) {
+        err = NAIVE_ERR_NOMEM;
+    }
+
+    self->right_delay_filters = alloc(alloc_context, NAIVE_MEM_STATE, sizeof(NaiveCascadedIir1stDf1) * (NaiveUSize)num_taps_cap);
+    if (self->right_delay_filters != NULL) {
+        for (NaiveI32 i = 0; i < num_taps_cap; ++i) {
+            err1 = naive_cascaded_iir_1st_df1_init(&self->right_delay_filters[i], alloc_context, alloc, 2);
+            if (!err && err1)
+                err = err1;
+        }
+    } else if (!err) {
+        err = NAIVE_ERR_NOMEM;
+    }
 
     return err;
 }
@@ -127,18 +135,10 @@ void naive_early_reflection_reset(NaiveEarlyReflection *self)
     }
     naive_delay_buf_reset(&self->left_send_delay_buf);
     naive_delay_buf_reset(&self->right_send_delay_buf);
-    naive_iir_2nd_df1_reset(&self->left_send_lpf_states);
-    naive_iir_2nd_df1_reset(&self->left_out_lpf_states);
-    naive_iir_2nd_df1_reset(&self->left_send_hpf_states);
-    naive_iir_2nd_df1_reset(&self->left_out_hpf_states);
-    naive_iir_2nd_df1_reset(&self->left_send_apf_states);
-    naive_iir_2nd_df1_reset(&self->left_out_apf_states);
-    naive_iir_2nd_df1_reset(&self->right_send_lpf_states);
-    naive_iir_2nd_df1_reset(&self->right_out_lpf_states);
-    naive_iir_2nd_df1_reset(&self->right_send_hpf_states);
-    naive_iir_2nd_df1_reset(&self->right_out_hpf_states);
-    naive_iir_2nd_df1_reset(&self->right_send_apf_states);
-    naive_iir_2nd_df1_reset(&self->right_out_apf_states);
+    for (NaiveI32 i = 0; i < self->num_taps_cap; ++i) {
+        naive_cascaded_iir_1st_df1_reset(&self->left_delay_filters[i]);
+        naive_cascaded_iir_1st_df1_reset(&self->right_delay_filters[i]);
+    }
 }
 
 NaiveErr naive_early_reflection_process(NaiveEarlyReflection *self,
@@ -155,104 +155,115 @@ NaiveErr naive_early_reflection_process(NaiveEarlyReflection *self,
         return NAIVE_ERR_INVALID_PARAMETER;
 
     NaiveI32 i, j;
-    NaiveF32 *left_send_in = scratch;
+    NaiveF32 *tmp = scratch;
+    NaiveF32 *left_send_in = (NaiveF32*)((NaiveUIntPtr)tmp + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
     NaiveF32 *right_send_in = (NaiveF32*)((NaiveUIntPtr)left_send_in + NAIVE_CEIL_8_BYTES(sizeof(NaiveF32) * block_size));
 
     memset(left_send_in, 0, sizeof(NaiveF32) * (NaiveUSize)block_size);
     for (i = 0; i < self->left_taps; ++i) {
-        if (self->left_delay_lens[i] > self->left_send_delay_len)
+        if (self->left_delay_lens[i] > self->left_send_len)
             break;
 
         if (self->left_delay_lens[i] == 0) {
-            naive_mix_with_gain(left_send_in, left_in, self->left_delay_gains[i], block_size);
+            memcpy(tmp, left_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
         } else {
             NaiveI32 n = 0;
             while (n < block_size && self->left_delay_bufs[i].len < self->left_delay_lens[i]) {
                 NaiveI32 len = NAIVE_MIN(self->left_delay_lens[i] - self->left_delay_bufs[i].len, block_size - n);
+                memset(&tmp[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_write(&self->left_delay_bufs[i], &left_in[n], len);
                 n += len;
             }
             while (n < block_size && self->left_delay_bufs[i].len >= self->left_delay_lens[i]) {
                 NaiveI32 len = NAIVE_MIN(self->left_delay_lens[i], block_size - n);
-                naive_mix_with_gain(&left_send_in[n], naive_delay_buf_front(&self->left_delay_bufs[i]), self->left_delay_gains[i], len);
+                memcpy(&tmp[n], naive_delay_buf_front(&self->left_delay_bufs[i]), sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_drain(&self->left_delay_bufs[i], len);
                 naive_delay_buf_write(&self->left_delay_bufs[i], &left_in[n], len);
                 n += len;
             }
         }
+
+        naive_cascaded_iir_1st_df1_process(&self->left_delay_filters[i], tmp, block_size);
+        naive_mix_with_gain(left_send_in, tmp, self->left_delay_gains[i], block_size);
     }
 
     memset(right_send_in, 0, sizeof(NaiveF32) * (NaiveUSize)block_size);
     for (j = 0; j < self->right_taps; ++j) {
-        if (self->right_delay_lens[j] > self->right_send_delay_len)
+        if (self->right_delay_lens[j] > self->right_send_len)
             break;
 
         if (self->right_delay_lens[j] == 0) {
-            naive_mix_with_gain(right_send_in, right_in, self->right_delay_gains[i], block_size);
+            memcpy(tmp, right_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
         } else {
             NaiveI32 n = 0;
             while (n < block_size && self->right_delay_bufs[j].len < self->right_delay_lens[j]) {
                 NaiveI32 len = NAIVE_MIN(self->right_delay_lens[j] - self->right_delay_bufs[j].len, block_size - n);
+                memset(&tmp[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_write(&self->right_delay_bufs[j], &right_in[n], len);
                 n += len;
             }
             while (n < block_size && self->right_delay_bufs[j].len >= self->right_delay_lens[j]) {
                 NaiveI32 len = NAIVE_MIN(self->right_delay_lens[j], block_size - n);
-                naive_mix_with_gain(&right_send_in[n], naive_delay_buf_front(&self->right_delay_bufs[j]), self->right_delay_gains[j], len);
+                memcpy(&tmp[n], naive_delay_buf_front(&self->right_delay_bufs[j]), sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_drain(&self->right_delay_bufs[j], len);
                 naive_delay_buf_write(&self->right_delay_bufs[j], &right_in[n], len);
                 n += len;
             }
         }
+
+        naive_cascaded_iir_1st_df1_process(&self->right_delay_filters[j], tmp, block_size);
+        naive_mix_with_gain(right_send_in, tmp, self->right_delay_gains[j], block_size);
     }
 
     memcpy(left_out, left_send_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
     memcpy(right_out, right_send_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
-    naive_iir_2nd_df1_process(&self->left_out_lpf_states, &self->left_lpf_coeffs, left_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_out_lpf_states, &self->right_lpf_coeffs, right_out, block_size);
-    naive_iir_2nd_df1_process(&self->left_out_hpf_states, &self->left_hpf_coeffs, left_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_out_hpf_states, &self->right_hpf_coeffs, right_out, block_size);
-    naive_iir_2nd_df1_process(&self->left_out_apf_states, &self->left_apf_coeffs, left_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_out_apf_states, &self->right_apf_coeffs, right_out, block_size);
 
     for (; i < self->left_taps; ++i) {
         if (self->left_delay_lens[i] == 0) {
-            naive_mix_with_gain(left_out, left_in, self->left_delay_gains[i], block_size);
+            memcpy(tmp, left_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
         } else {
             NaiveI32 n = 0;
             while (n < block_size && self->left_delay_bufs[i].len < self->left_delay_lens[i]) {
                 NaiveI32 len = NAIVE_MIN(self->left_delay_lens[i] - self->left_delay_bufs[i].len, block_size - n);
+                memset(&tmp[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_write(&self->left_delay_bufs[i], &left_in[n], len);
                 n += len;
             }
             while (n < block_size && self->left_delay_bufs[i].len >= self->left_delay_lens[i]) {
                 NaiveI32 len = NAIVE_MIN(self->left_delay_lens[i], block_size - n);
-                naive_mix_with_gain(&left_out[n], naive_delay_buf_front(&self->left_delay_bufs[i]), self->left_delay_gains[i], len);
+                memcpy(&tmp[n], naive_delay_buf_front(&self->left_delay_bufs[i]), sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_drain(&self->left_delay_bufs[i], len);
                 naive_delay_buf_write(&self->left_delay_bufs[i], &left_in[n], len);
                 n += len;
             }
         }
+
+        naive_cascaded_iir_1st_df1_process(&self->left_delay_filters[i], tmp, block_size);
+        naive_mix_with_gain(left_out, tmp, self->left_delay_gains[i], block_size);
     }
 
     for (; j < self->right_taps; ++j) {
         if (self->right_delay_lens[j] == 0) {
-            naive_mix_with_gain(right_out, right_in, self->right_delay_gains[i], block_size);
+            memcpy(tmp, right_in, sizeof(NaiveF32) * (NaiveUSize)block_size);
         } else {
             NaiveI32 n = 0;
             while (n < block_size && self->right_delay_bufs[j].len < self->right_delay_lens[j]) {
                 NaiveI32 len = NAIVE_MIN(self->right_delay_lens[j] - self->right_delay_bufs[j].len, block_size - n);
+                memset(&tmp[n], 0, sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_write(&self->right_delay_bufs[j], &right_in[n], len);
                 n += len;
             }
             while (n < block_size && self->right_delay_bufs[j].len >= self->right_delay_lens[j]) {
                 NaiveI32 len = NAIVE_MIN(self->right_delay_lens[j], block_size - n);
-                naive_mix_with_gain(&right_out[n], naive_delay_buf_front(&self->right_delay_bufs[j]), self->right_delay_gains[j], len);
+                memcpy(&tmp[n], naive_delay_buf_front(&self->right_delay_bufs[j]), sizeof(NaiveF32) * (NaiveUSize)len);
                 naive_delay_buf_drain(&self->right_delay_bufs[j], len);
                 naive_delay_buf_write(&self->right_delay_bufs[j], &right_in[n], len);
                 n += len;
             }
         }
+
+        naive_cascaded_iir_1st_df1_process(&self->right_delay_filters[j], tmp, block_size);
+        naive_mix_with_gain(right_out, tmp, self->right_delay_gains[j], block_size);
     }
 
     if (self->left_send_delay_len == 0) {
@@ -293,17 +304,16 @@ NaiveErr naive_early_reflection_process(NaiveEarlyReflection *self,
         }
     }
 
-    naive_iir_2nd_df1_process(&self->left_send_lpf_states, &self->left_lpf_coeffs, left_send_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_send_lpf_states, &self->right_lpf_coeffs, right_send_out, block_size);
-    naive_iir_2nd_df1_process(&self->left_send_hpf_states, &self->left_hpf_coeffs, left_send_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_send_hpf_states, &self->right_hpf_coeffs, right_send_out, block_size);
-    naive_iir_2nd_df1_process(&self->left_send_apf_states, &self->left_apf_coeffs, left_send_out, block_size);
-    naive_iir_2nd_df1_process(&self->right_send_apf_states, &self->right_apf_coeffs, right_send_out, block_size);
-
     return NAIVE_OK;
 }
 
-NaiveErr naive_early_reflection_set_preset(NaiveEarlyReflection *self, NaiveEarlyReflectionType type, NaiveI32 sample_rate)
+NaiveErr naive_early_reflection_set_preset(NaiveEarlyReflection *self,
+                                           NaiveEarlyReflectionType type,
+                                           NaiveI32 sample_rate,
+                                           NaiveF32 low_mid_xover_freq,
+                                           NaiveF32 high_damp_freq,
+                                           NaiveF32 dc_reverb_time,
+                                           NaiveF32 mid_freq_reverb_time)
 {
     if (type < 0 || type >= NAIVE_EARLY_REFLECTION_TYPE_ROOM_SIM)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -336,6 +346,36 @@ NaiveErr naive_early_reflection_set_preset(NaiveEarlyReflection *self, NaiveEarl
     }
     memcpy(self->right_delay_gains, preset->right_gains, sizeof(NaiveF32) * (NaiveUSize)preset->right_taps);
 
+    for (NaiveI32 lr = 0; lr < 2; ++lr) {
+        NaiveI32 num_taps = (lr == 0) ? self->left_taps : self->right_taps;
+        NaiveI32 *delay_lens = (lr == 0) ? self->left_delay_lens : self->right_delay_lens;
+        NaiveCascadedIir1stDf1 *delay_filters = (lr == 0) ? self->left_delay_filters : self->right_delay_filters;
+
+        for (NaiveI32 i = 0; i < num_taps; ++i) {
+            if (delay_lens[i] == 0) {
+                delay_filters[i].coeffs[0].b0 = 1.0f;
+                delay_filters[i].coeffs[0].b1 = 0.0f;
+                delay_filters[i].coeffs[0].a1 = 0.0f;
+                delay_filters[i].num_fos = 1;
+            } else {
+                NaiveF32 pl = (1 - NAIVE_PI * low_mid_xover_freq / (NaiveF32)sample_rate) / (1 + NAIVE_PI * low_mid_xover_freq / (NaiveF32)sample_rate);
+                NaiveF32 g0 = powf(10.0f, -3 * (NaiveF32)delay_lens[i] / (dc_reverb_time * (NaiveF32)sample_rate));
+                NaiveF32 gm = powf(10.0f, -3 * (NaiveF32)delay_lens[i] / (mid_freq_reverb_time * (NaiveF32)sample_rate));
+                delay_filters[i].coeffs[0].b0 = gm + (g0 - gm) * (1 - pl) / 2.0f;
+                delay_filters[i].coeffs[0].b1 = -gm * pl + (g0 - gm) * (1 - pl) / 2.0f;
+                delay_filters[i].coeffs[0].a1 = -pl;
+
+                NaiveF32 neg_half_b = (1 - gm * gm * cosf(2 * NAIVE_PI * high_damp_freq / (NaiveF32)sample_rate)) / (1 - gm * gm);
+                NaiveF32 ph = neg_half_b - sqrtf(neg_half_b * neg_half_b - 1.0f);
+                delay_filters[i].coeffs[1].b0 = 1 - ph;
+                delay_filters[i].coeffs[1].b1 = 0;
+                delay_filters[i].coeffs[1].a1 = -ph;
+
+                delay_filters[i].num_fos = 2;
+            }
+        }
+    }
+
     return NAIVE_OK;
 }
 
@@ -344,12 +384,9 @@ NaiveErr naive_early_reflection_set_left_send_time(NaiveEarlyReflection *self, N
     if (left_send_time < 0)
         return NAIVE_ERR_INVALID_PARAMETER;
 
-    NaiveI32 left_send_delay_len = (NaiveI32)(left_send_time * (NaiveF32)sample_rate + 0.5f);
+    NaiveI32 left_send_len = (NaiveI32)(left_send_time * (NaiveF32)sample_rate + 0.5f);
 
-    if (left_send_delay_len > self->delay_len_cap)
-        return NAIVE_ERR_INVALID_PARAMETER;
-
-    self->left_send_delay_len = left_send_delay_len;
+    self->left_send_len = left_send_len;
 
     return NAIVE_OK;
 }
@@ -359,7 +396,34 @@ NaiveErr naive_early_reflection_set_right_send_time(NaiveEarlyReflection *self, 
     if (right_send_time < 0)
         return NAIVE_ERR_INVALID_PARAMETER;
 
-    NaiveI32 right_send_delay_len = (NaiveI32)(right_send_time * (NaiveF32)sample_rate + 0.5f);
+    NaiveI32 right_send_len = (NaiveI32)(right_send_time * (NaiveF32)sample_rate + 0.5f);
+
+    self->right_send_len = right_send_len;
+
+    return NAIVE_OK;
+}
+
+NaiveErr naive_early_reflection_set_left_send_delay_time(NaiveEarlyReflection *self, NaiveF32 left_send_delay_time, NaiveI32 sample_rate)
+{
+    if (left_send_delay_time < 0)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    NaiveI32 left_send_delay_len = (NaiveI32)(left_send_delay_time * (NaiveF32)sample_rate + 0.5f);
+
+    if (left_send_delay_len > self->delay_len_cap)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    self->left_send_delay_len = left_send_delay_len;
+
+    return NAIVE_OK;
+}
+
+NaiveErr naive_early_reflection_set_right_send_delay_time(NaiveEarlyReflection *self, NaiveF32 right_send_delay_time, NaiveI32 sample_rate)
+{
+    if (right_send_delay_time < 0)
+        return NAIVE_ERR_INVALID_PARAMETER;
+
+    NaiveI32 right_send_delay_len = (NaiveI32)(right_send_delay_time * (NaiveF32)sample_rate + 0.5f);
 
     if (right_send_delay_len > self->delay_len_cap)
         return NAIVE_ERR_INVALID_PARAMETER;

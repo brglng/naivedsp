@@ -113,7 +113,16 @@ NaiveErr naive_fdn_reverb_set_balance_crosstalk(NaiveFdnReverb *self,
 NaiveErr naive_fdn_reverb_set_left_pre_delay_time(NaiveFdnReverb *self, NaiveF32 left_pre_delay_time);
 NaiveErr naive_fdn_reverb_set_right_pre_delay_time(NaiveFdnReverb *self, NaiveF32 right_pre_delay_time);
 
-NaiveErr naive_fdn_reverb_set_early_reflection_preset(NaiveFdnReverb *self, NaiveEarlyReflectionType type);
+NAIVE_INLINE NaiveErr naive_fdn_reverb_set_early_reflection_preset(NaiveFdnReverb *self,
+                                                                   NaiveEarlyReflectionType type,
+                                                                   NaiveF32 low_mix_xover_freq,
+                                                                   NaiveF32 high_damp_freq,
+                                                                   NaiveF32 dc_reverb_time,
+                                                                   NaiveF32 mid_freq_reverb_time)
+{
+    return naive_early_reflection_set_preset(&self->early_reflection, type, self->sample_rate, low_mix_xover_freq, high_damp_freq, dc_reverb_time, mid_freq_reverb_time);
+}
+
 NaiveErr naive_fdn_reverb_set_left_early_reflection_send_gain(NaiveFdnReverb *self, NaiveF32 gain);
 NaiveErr naive_fdn_reverb_set_right_early_reflection_send_gain(NaiveFdnReverb *self, NaiveF32 gain);
 
@@ -125,41 +134,28 @@ NaiveErr naive_fdn_reverb_set_diffuse_params(NaiveFdnReverb *self,
                                              NaiveF32 high_damp_freq,
                                              NaiveF32 dc_reverb_time,
                                              NaiveF32 mid_freq_reverb_time);
+
 NaiveErr naive_fdn_reverb_set_input_gain(NaiveFdnReverb *self, NaiveF32 input_gain);
 NaiveErr naive_fdn_reverb_set_output_gain(NaiveFdnReverb *self, NaiveF32 output_gain);
 
-
-NaiveErr naive_fdn_reverb_set_left_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time);
-NaiveErr naive_fdn_reverb_set_right_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time);
-
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_left_early_lpf(NaiveFdnReverb *self, NaiveF32 freq)
+NAIVE_INLINE NaiveErr naive_fdn_reverb_set_left_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
 {
-    return naive_early_reflection_set_left_lpf(&self->early_reflection, self->sample_rate, freq);
+    return naive_early_reflection_set_left_send_time(&self->early_reflection, send_time, self->sample_rate);
 }
 
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_right_early_lpf(NaiveFdnReverb *self, NaiveF32 freq)
+NAIVE_INLINE NaiveErr naive_fdn_reverb_set_right_early_send_time(NaiveFdnReverb *self, NaiveF32 send_time)
 {
-    return naive_early_reflection_set_right_lpf(&self->early_reflection, self->sample_rate, freq);
+    return naive_early_reflection_set_right_send_time(&self->early_reflection, send_time, self->sample_rate);
 }
 
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_left_early_hpf(NaiveFdnReverb *self, NaiveF32 freq)
+NAIVE_INLINE NaiveErr naive_fdn_reverb_set_left_early_send_delay_time(NaiveFdnReverb *self, NaiveF32 send_time)
 {
-    return naive_early_reflection_set_left_hpf(&self->early_reflection, self->sample_rate, freq);
+    return naive_early_reflection_set_left_send_delay_time(&self->early_reflection, send_time, self->sample_rate);
 }
 
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_right_early_hpf(NaiveFdnReverb *self, NaiveF32 freq)
+NAIVE_INLINE NaiveErr naive_fdn_reverb_set_right_early_send_delay_time(NaiveFdnReverb *self, NaiveF32 send_time)
 {
-    return naive_early_reflection_set_right_hpf(&self->early_reflection, self->sample_rate, freq);
-}
-
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_left_early_apf(NaiveFdnReverb *self, NaiveF32 freq, NaiveF32 q)
-{
-    return naive_early_reflection_set_left_apf(&self->early_reflection, self->sample_rate, freq, q);
-}
-
-NAIVE_INLINE NaiveErr naive_fdn_reverb_set_right_early_apf(NaiveFdnReverb *self, NaiveF32 freq, NaiveF32 q)
-{
-    return naive_early_reflection_set_right_apf(&self->early_reflection, self->sample_rate, freq, q);
+    return naive_early_reflection_set_right_send_delay_time(&self->early_reflection, send_time, self->sample_rate);
 }
 
 NaiveErr naive_fdn_reverb_set_left_early_send_gain(NaiveFdnReverb *self, NaiveF32 gain);

@@ -27,12 +27,44 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
     if (!err) {
         err = naive_fdn_reverb_set_right_pre_delay_time(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-pre-delay-time"));
     }
+
+    NaiveF32 low_mid_xover_freq;
+    NaiveF32 high_damp_freq;
+    NaiveF32 dc_reverb_time;
+    NaiveF32 mid_freq_reverb_time;
+    if (!err) {
+        NaiveI32 num_delays = (NaiveI32)toml_table_get_as_integer(config, "num-delays");
+        NaiveF32 min_acoustic_path = (NaiveF32)toml_table_get_as_float(config, "min-acoustic-path");
+        NaiveF32 max_acoustic_path = (NaiveF32)toml_table_get_as_float(config, "max-acoustic-path");
+        low_mid_xover_freq = (NaiveF32)toml_table_get_as_float(config, "low-mid-xover-freq");
+        high_damp_freq = (NaiveF32)toml_table_get_as_float(config, "high-damp-freq");
+        dc_reverb_time = (NaiveF32)toml_table_get_as_float(config, "dc-reverb-time");
+        mid_freq_reverb_time = (NaiveF32)toml_table_get_as_float(config, "mid-freq-reverb-time");
+        err = naive_fdn_reverb_set_diffuse_params(&context->obj,
+                                                  num_delays,
+                                                  min_acoustic_path,
+                                                  max_acoustic_path,
+                                                  low_mid_xover_freq,
+                                                  high_damp_freq,
+                                                  dc_reverb_time,
+                                                  mid_freq_reverb_time);
+    }
     if (!err) {
         NAIVE_CONST char *early_type = toml_table_get_as_string(config, "early-reflection")->str;
         if (strcmp(early_type, "moorer") == 0) {
-            err = naive_fdn_reverb_set_early_reflection_preset(&context->obj, NAIVE_EARLY_REFLECTION_TYPE_MOORER);
+            err = naive_fdn_reverb_set_early_reflection_preset(&context->obj,
+                                                               NAIVE_EARLY_REFLECTION_TYPE_MOORER,
+                                                               low_mid_xover_freq,
+                                                               high_damp_freq,
+                                                               dc_reverb_time,
+                                                               mid_freq_reverb_time);
         } else if (strcmp(early_type, "moorer-hall") == 0) {
-            err = naive_fdn_reverb_set_early_reflection_preset(&context->obj, NAIVE_EARLY_REFLECTION_TYPE_MOORER_HALL);
+            err = naive_fdn_reverb_set_early_reflection_preset(&context->obj,
+                                                               NAIVE_EARLY_REFLECTION_TYPE_MOORER_HALL,
+                                                               low_mid_xover_freq,
+                                                               high_damp_freq,
+                                                               dc_reverb_time,
+                                                               mid_freq_reverb_time);
         }
     }
     if (!err) {
@@ -42,33 +74,10 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
         err = naive_fdn_reverb_set_right_early_send_time(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-early-send-time"));
     }
     if (!err) {
-        err = naive_fdn_reverb_set_left_early_lpf(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-early-lpf-freq"));
-    }
-    if (!err) {
-        err = naive_fdn_reverb_set_right_early_lpf(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-early-lpf-freq"));
-    }
-    if (!err) {
         err = naive_fdn_reverb_set_left_early_send_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "left-early-send-gain"));
     }
     if (!err) {
         err = naive_fdn_reverb_set_right_early_send_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "right-early-send-gain"));
-    }
-    if (!err) {
-        NaiveI32 num_delays = (NaiveI32)toml_table_get_as_integer(config, "num-delays");
-        NaiveF32 min_acoustic_path = (NaiveF32)toml_table_get_as_float(config, "min-acoustic-path");
-        NaiveF32 max_acoustic_path = (NaiveF32)toml_table_get_as_float(config, "max-acoustic-path");
-        NaiveF32 low_mix_xover_freq = (NaiveF32)toml_table_get_as_float(config, "low-mid-xover-freq");
-        NaiveF32 high_damp_freq = (NaiveF32)toml_table_get_as_float(config, "high-damp-freq");
-        NaiveF32 dc_reverb_time = (NaiveF32)toml_table_get_as_float(config, "dc-reverb-time");
-        NaiveF32 mid_freq_reverb_time = (NaiveF32)toml_table_get_as_float(config, "mid-freq-reverb-time");
-        err = naive_fdn_reverb_set_diffuse_params(&context->obj,
-                                                  num_delays,
-                                                  min_acoustic_path,
-                                                  max_acoustic_path,
-                                                  low_mix_xover_freq,
-                                                  high_damp_freq,
-                                                  dc_reverb_time,
-                                                  mid_freq_reverb_time);
     }
     if (!err) {
         err = naive_fdn_reverb_set_input_gain(&context->obj, (NaiveF32)toml_table_get_as_float(config, "input-gain"));
@@ -143,6 +152,8 @@ NaiveErr test_process(void *_context,
     TestContext *context = _context;
     if (num_in_channels == 1) {
         memcpy(in[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
+        naive_gain(in[0], in_len, sqrtf(2.0f) / 2.0f);
+        naive_gain(in[1], in_len, sqrtf(2.0f) / 2.0f);
     }
     *out_len = in_len;
     return naive_fdn_reverb_process(&context->obj, in[0], in[1], out[0], out[1], in_len, context->scratch);
