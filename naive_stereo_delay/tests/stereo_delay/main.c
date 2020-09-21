@@ -70,8 +70,11 @@ NaiveErr test_process(void *_context,
 {
     TestContext *context = _context;
 
-    if (num_in_channels != 2)
-        return NAIVE_ERR_INVALID_PARAMETER;
+    if (num_in_channels == 1) {
+        memcpy(in[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
+        naive_gain(in[0], in_len, sqrtf(2.0f) / 2.0f);
+        naive_gain(in[1], in_len, sqrtf(2.0f) / 2.0f);
+    }
 
     memcpy(out[0], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
     memcpy(out[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
@@ -105,7 +108,7 @@ int main(void)
                               NAIVE_TEST_INPUTS_DIR,
                               NAIVE_TEST_BINARY_DIR "/outputs",
                               NAIVE_TEST_SOURCE_DIR "/refs",
-                              1,
+                              2,
                               2,
                               256,
                               &test_setup,
