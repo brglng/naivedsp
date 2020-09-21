@@ -74,7 +74,6 @@ NaiveErr naive_cascaded_iir_1st_df1_init(NaiveCascadedIir1stDf1 *self, void *all
     self->num_fos = 0;
     self->coeffs = NULL;
     self->states = NULL;
-    self->gain = 1.0f;
 
     if (num_fos_cap > 0) {
         self->coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, sizeof(NaiveIir1stCoeffs) * (NaiveUSize)num_fos_cap);
@@ -108,7 +107,6 @@ void naive_cascaded_iir_1st_df1_process(NaiveCascadedIir1stDf1 *self, NaiveF32 *
     for (NaiveI32 i = 0; i < self->num_fos; ++i) {
         naive_iir_1st_df1_process(&self->states[i], &self->coeffs[i], inout, len);
     }
-    naive_gain(inout, len, self->gain);
 }
 
 void naive_cascaded_iir_1st_df1_reset(NaiveCascadedIir1stDf1 *self)
@@ -134,7 +132,6 @@ NaiveErr naive_cascaded_iir_2nd_df1_init(NaiveCascadedIir2ndDf1 *self, void *all
     self->num_sos = 0;
     self->coeffs = NULL;
     self->states = NULL;
-    self->gain = 1.0f;
 
     if (num_sos_cap > 0) {
         self->coeffs = alloc(alloc_context, NAIVE_MEM_PARAM, sizeof(NaiveIir2ndCoeffs) * (NaiveUSize)num_sos_cap);
@@ -168,7 +165,6 @@ void naive_cascaded_iir_2nd_df1_process(NaiveCascadedIir2ndDf1 *self, NaiveF32 *
     for (NaiveI32 i = 0; i < self->num_sos; ++i) {
         naive_iir_2nd_df1_process(&self->states[i], &self->coeffs[i], inout, len);
     }
-    naive_gain(inout, len, self->gain);
 }
 
 void naive_cascaded_iir_2nd_df1_reset(NaiveCascadedIir2ndDf1 *self)

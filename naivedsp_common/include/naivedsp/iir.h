@@ -21,7 +21,6 @@ typedef struct {
     NaiveI32                num_fos;
     NaiveIir1stCoeffs*      coeffs;
     NaiveIir1stDf1States*   states;
-    NaiveF32                gain;
 } NaiveCascadedIir1stDf1;
 
 NaiveErr naive_cascaded_iir_1st_df1_init(NaiveCascadedIir1stDf1 *self, void *alloc_context, NaiveAllocFunc alloc, NaiveI32 num_fos_cap);
@@ -34,7 +33,6 @@ typedef struct {
     NaiveI32                num_sos;
     NaiveIir2ndCoeffs       *coeffs;
     NaiveIir2ndDf1States    *states;
-    NaiveF32                gain;
 } NaiveCascadedIir2ndDf1;
 
 NaiveErr naive_cascaded_iir_2nd_df1_init(NaiveCascadedIir2ndDf1 *self, void *alloc_context, NaiveAllocFunc alloc, NaiveI32 num_sos_cap);

@@ -7,6 +7,8 @@ extern "C" {
 
 #include "naivedsp/math_types.h"
 
+#define NAIVE_SATURATE(x) NAIVE_MAX(NAIVE_MIN(x, 1.0f), -1.0f)
+
 void naive_i16_q15_to_f32(NaiveF32 *out, NaiveI16 *in, NaiveI32 block_size);
 void naive_f32_to_i16_q15(NaiveI16 *out, NaiveF32 *in, NaiveI32 block_size);
 void naive_i16_q15_interleaved_to_f32_planar(NaiveF32 **out, NaiveI16 *in,
