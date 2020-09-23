@@ -49,6 +49,7 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self, NaiveF32 *in_lef
         while (n < block_size && self->left_delay_buf.len >= self->delay_len) {
             NaiveI32 len = NAIVE_MIN(self->delay_len, block_size - n);
             memcpy(&out_left[n], naive_delay_buf_front(&self->left_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
+            memcpy(&out_right[n], naive_delay_buf_front(&self->right_delay_buf), sizeof(NaiveF32) * (NaiveUSize)len);
             naive_delay_buf_drain(&self->left_delay_buf, len);
             naive_delay_buf_drain(&self->right_delay_buf, len);
             naive_delay_buf_write(&self->left_delay_buf, &in_left[n], len);
