@@ -28,7 +28,7 @@ Use `add_subdirectory`
     add_executable(yourprogram yourprogram.c)
     target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
 
-Use with `find_package`
+Use `find_package`
 
     find_package(naivedsp)
     add_executable(yourprogram yourprogram.c)
