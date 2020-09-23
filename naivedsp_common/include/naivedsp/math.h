@@ -73,6 +73,7 @@ NAIVE_INLINE NaiveI32 naive_next_pow_of_two_i32(NaiveI32 x)
 #define NAIVE_E   2.7182818284590452354f
 
 #define NAIVE_DB(x) (20 * log10f(x))
+#define NAIVE_FROM_DB(x) (powf(10.0f, (x) / 20.0f))
 
 #ifdef __cplusplus
 }
