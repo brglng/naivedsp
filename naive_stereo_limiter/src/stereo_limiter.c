@@ -65,7 +65,6 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self, NaiveF32 *in_lef
     NaiveF32 left_peak = self->prev_left_peak;
     NaiveF32 right_peak = self->prev_right_peak;
     NaiveF32 gain = self->prev_gain;
-    NaiveI32 n = 0;
     for (NaiveI32 i = 0; i < block_size; ++i) {
         NaiveF32 left_amp = fabsf(in_left[i] * input_gain);
         NaiveF32 right_amp = fabsf(in_right[i] * input_gain);
@@ -86,9 +85,8 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self, NaiveF32 *in_lef
 
         gain = (1 - coeff) * gain + coeff * target_gain;
 
-        out_left[n] *= gain;
-        out_right[n] *= gain;
-        ++n;
+        out_left[i] *= gain;
+        out_right[i] *= gain;
     }
     self->prev_left_peak = left_peak;
     self->prev_right_peak = right_peak;
