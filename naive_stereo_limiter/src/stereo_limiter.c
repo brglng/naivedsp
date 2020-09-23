@@ -140,7 +140,11 @@ NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32
     if (attack_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
 
-    self->attack_coeff = 1.0f - expf(logf(9.0f) / (attack_time * (NaiveF32)sample_rate));
+    if (attack_time == 0.0f) {
+        self->attack_coeff = 1.0f;
+    } else {
+        self->attack_coeff = 1.0f - expf(logf(9.0f) / (attack_time * (NaiveF32)sample_rate));
+    }
 
     return NAIVE_OK;
 }
@@ -150,7 +154,11 @@ NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF3
     if (release_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
 
-    self->release_coeff = 1.0f - expf(logf(9.0f) / (release_time * (NaiveF32)sample_rate));
+    if (release_time == 0.0f) {
+        self->release_coeff = 1.0f;
+    } else {
+        self->release_coeff = 1.0f - expf(logf(9.0f) / (release_time * (NaiveF32)sample_rate));
+    }
 
     return NAIVE_OK;
 }
