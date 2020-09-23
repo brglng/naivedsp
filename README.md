@@ -22,13 +22,13 @@ Use `FetchContent`:
     add_executable(yourprogram yourprogram.c)
     target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
 
-Use `add_subdirectory`
+Use `add_subdirectory`:
 
     add_subdirectory(naivedsp)
     add_executable(yourprogram yourprogram.c)
     target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
 
-Use `find_package`
+Use `find_package`:
 
     find_package(naivedsp)
     add_executable(yourprogram yourprogram.c)
