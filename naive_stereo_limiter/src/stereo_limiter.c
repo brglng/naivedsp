@@ -39,6 +39,12 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self,
     if (block_size == 0)
         return NAIVE_OK;
 
+    if (!self->enabled) {
+        memcpy(out_left, in_left, sizeof(NaiveF32) * (NaiveUSize)block_size);
+        memcpy(out_right, in_right, sizeof(NaiveF32) * (NaiveUSize)block_size);
+        return NAIVE_OK;
+    }
+
     if (self->delay_len == 0) {
         memcpy(out_left, in_left, sizeof(NaiveF32) * (NaiveUSize)block_size);
         memcpy(out_right, in_right, sizeof(NaiveF32) * (NaiveUSize)block_size);
