@@ -151,9 +151,8 @@ NaiveErr test_process(void *_context,
 {
     TestContext *context = _context;
     if (num_in_channels == 1) {
-        memcpy(in[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
         naive_gain(in[0], in_len, sqrtf(2.0f) / 2.0f);
-        naive_gain(in[1], in_len, sqrtf(2.0f) / 2.0f);
+        memcpy(in[1], in[0], sizeof(NaiveF32) * (NaiveUSize)in_len);
     }
     *out_len = in_len;
     return naive_fdn_reverb_process(&context->obj, in[0], in[1], out[0], out[1], in_len, context->scratch);
