@@ -20,16 +20,16 @@ Use `FetchContent`:
         )
     FetchContent_MakeAvailable(naivedsp)
     add_executable(yourprogram yourprogram.c)
-    target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
+    target_link_libraries(yourprogram naivedsp::common naivedsp::fdn-reverb)
 
 Use `add_subdirectory`:
 
     add_subdirectory(naivedsp)
     add_executable(yourprogram yourprogram.c)
-    target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
+    target_link_libraries(yourprogram naivedsp::common naivedsp::fdn-reverb)
 
 Use `find_package`:
 
     find_package(naivedsp)
     add_executable(yourprogram yourprogram.c)
-    target_link_libraries(yourprogram PRIVATE naivedsp::common naivedsp::fdn-reverb)
+    target_link_libraries(yourprogram naivedsp::common naivedsp::fdn-reverb)
