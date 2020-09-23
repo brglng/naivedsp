@@ -7,14 +7,16 @@
 #include "naivedsp/test.h"
 
 typedef struct {
-    NaiveStereoLimiter stereo_limiter_obj;
-    void *scratch;
+    NaiveStereoLimiter      stereo_limiter_obj;
+    NaiveDefaultAllocator   allocator;
 } TestContext;
 
 NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
 {
     TestContext *context = _context;
     NaiveErr err = NAIVE_OK;
+
+    (void)sample_rate;
 
     err = naive_stereo_limiter_set_input_gain(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "input-gain"));
 
@@ -26,10 +28,10 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
         err = naive_stereo_limiter_set_threshold(&context->stereo_limiter_obj, NAIVE_FROM_DB(threshold_db));
     }
     if (!err) {
-        err = naive_stereo_limiter_set_attack_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "attack-time"), sample_rate);
+        err = naive_stereo_limiter_set_attack_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "attack-time"));
     }
     if (!err) {
-        err = naive_stereo_limiter_set_release_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "release-time"), sample_rate);
+        err = naive_stereo_limiter_set_release_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "release-time"));
     }
 
     return err;
@@ -38,13 +40,23 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
 NaiveErr test_setup(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 sample_rate)
 {
     TestContext *context = _context;
-    naive_stereo_limiter_reset(&context->stereo_limiter_obj);
+    NaiveErr err;
+
+    err = naive_default_allocator_init(&context->allocator);
+    if (err)
+        return err;
+
+    err = naive_stereo_limiter_init(&context->stereo_limiter_obj, &context->allocator, &naive_default_alloc, sample_rate, 100);
+    if (err)
+        return err;
+
     return set_params(context, config, sample_rate);
 }
 
 void test_teardown(void *_context)
 {
-    (void)_context;
+    TestContext *context = _context;
+    naive_default_allocator_finalize(&context->allocator);
 }
 
 NaiveErr test_process(void *_context,

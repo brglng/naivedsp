@@ -2,18 +2,20 @@
 #include "naivedsp/math.h"
 #include "naivedsp/stereo_limiter.h"
 
-NaiveErr naive_stereo_limiter_init(NaiveStereoLimiter *self, void *alloc_context, NaiveAllocFunc *alloc, NaiveI32 delay_len_cap)
+NaiveErr naive_stereo_limiter_init(NaiveStereoLimiter *self, void *alloc_context, NaiveAllocFunc *alloc,
+                                   NaiveI32 sample_rate, NaiveI32 delay_len_cap)
 {
     NaiveErr err = NAIVE_OK;
     NaiveErr err1 = NAIVE_OK;
 
+    self->sample_rate = sample_rate;
     self->enabled = NAIVE_FALSE;
     self->input_gain = 1.0f;
     self->output_gain = 1.0f;
     self->threshold = 1.0f;
     self->delay_len = 5;
     self->attack_coeff = 1.0f;
-    self->release_coeff = 1.0f - expf(-logf(9) / (0.12f * 44100.0f));
+    self->release_coeff = 1.0f - expf(-logf(9) / (0.12f * (NaiveF32)sample_rate));
     self->prev_left_peak = 0.0f;
     self->prev_right_peak = 0.0f;
     self->prev_gain = 1.0f;
@@ -26,7 +28,10 @@ NaiveErr naive_stereo_limiter_init(NaiveStereoLimiter *self, void *alloc_context
     return err;
 }
 
-NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self, NaiveF32 *in_left, NaiveF32 *in_right, NaiveF32 *out_left, NaiveF32 *out_right, NaiveI32 block_size)
+NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self,
+                                      NaiveF32 *in_left, NaiveF32 *in_right,
+                                      NaiveF32 *out_left, NaiveF32 *out_right,
+                                      NaiveI32 block_size)
 {
     if (block_size < 0)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -67,15 +72,15 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self, NaiveF32 *in_lef
     NaiveF32 right_peak = self->prev_right_peak;
     NaiveF32 gain = self->prev_gain;
     for (NaiveI32 i = 0; i < block_size; ++i) {
-        NaiveF32 left_amp = fabsf(in_left[i] * input_gain);
-        NaiveF32 right_amp = fabsf(in_right[i] * input_gain);
+        NaiveF32 left_amp = NAIVE_ABS(in_left[i] * input_gain);
+        NaiveF32 right_amp = NAIVE_ABS(in_right[i] * input_gain);
         NaiveF32 left_coeff = (left_amp > left_peak) ? attack_coeff : release_coeff;
         NaiveF32 right_coeff = (right_amp > right_peak) ? attack_coeff : release_coeff;
         left_peak = (1 - left_coeff) * left_peak + left_coeff * left_amp;
         right_peak = (1 - right_coeff) * right_peak + right_coeff * right_amp;
 
-        NaiveF32 peak = fmaxf(left_peak, right_peak);
-        NaiveF32 target_gain = (peak == 0.0f) ? 1.0f : fminf(1.0f, threshold / peak);
+        NaiveF32 peak = NAIVE_MAX(left_peak, right_peak);
+        NaiveF32 target_gain = (peak == 0.0f) ? 1.0f : NAIVE_MIN(1.0f, threshold / peak);
 
         NaiveF32 coeff;
         if (target_gain < gain) {
@@ -135,7 +140,7 @@ NaiveErr naive_stereo_limiter_set_threshold(NaiveStereoLimiter *self, NaiveF32 t
     return NAIVE_OK;
 }
 
-NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32 attack_time, NaiveI32 sample_rate)
+NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32 attack_time)
 {
     if (attack_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -143,13 +148,13 @@ NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32
     if (attack_time == 0.0f) {
         self->attack_coeff = 1.0f;
     } else {
-        self->attack_coeff = 1.0f - expf(logf(9.0f) / (attack_time * (NaiveF32)sample_rate));
+        self->attack_coeff = 1.0f - expf(logf(9.0f) / (attack_time * (NaiveF32)self->sample_rate));
     }
 
     return NAIVE_OK;
 }
 
-NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF32 release_time, NaiveI32 sample_rate)
+NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF32 release_time)
 {
     if (release_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
@@ -157,14 +162,16 @@ NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF3
     if (release_time == 0.0f) {
         self->release_coeff = 1.0f;
     } else {
-        self->release_coeff = 1.0f - expf(logf(9.0f) / (release_time * (NaiveF32)sample_rate));
+        self->release_coeff = 1.0f - expf(logf(9.0f) / (release_time * (NaiveF32)self->sample_rate));
     }
 
     return NAIVE_OK;
 }
 
-NaiveErr naive_stereo_limiter_set_delay_len(NaiveStereoLimiter *self, NaiveI32 delay_len)
+NaiveErr naive_stereo_limiter_set_delay_time(NaiveStereoLimiter *self, NaiveF32 delay_time)
 {
+    NaiveI32 delay_len = (NaiveI32)(delay_time * (NaiveF32)self->sample_rate + 0.5f);
+
     if (delay_len < 0 || delay_len > self->left_delay_buf.size)
         return NAIVE_ERR_INVALID_PARAMETER;
 
@@ -173,12 +180,12 @@ NaiveErr naive_stereo_limiter_set_delay_len(NaiveStereoLimiter *self, NaiveI32 d
     return NAIVE_OK;
 }
 
-void naive_stereo_limiter_set_default_params(NaiveStereoLimiter *self, NaiveI32 sample_rate)
+void naive_stereo_limiter_set_default_params(NaiveStereoLimiter *self)
 {
     self->input_gain = 1.0f;
     self->output_gain = 1.0f;
     self->threshold = 1.0f;
     self->delay_len = 5;
     self->attack_coeff = 1.0f;
-    self->release_coeff = 1.0f - expf(-logf(9.0f) / (0.12f * (NaiveF32)sample_rate));
+    self->release_coeff = 1.0f - expf(-logf(9.0f) / (0.12f * (NaiveF32)self->sample_rate));
 }
