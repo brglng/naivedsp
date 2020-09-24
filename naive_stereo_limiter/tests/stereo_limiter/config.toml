@@ -1,8 +1,9 @@
-[stereo-limiter-lr-diff]
-input = "Tones_1kHz_-3dBFS_-6dBFS_LR_Diff_44k_16bit_2ch.wav"
-output = "StereoLimiter_LR_Diff_TH_-3dB_AT_5ms_RT_200ms.wav"
+[StereoLimiter_Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_PhaseOut_TH_-3dB_AT_5ms_RT_200ms]
+input = "Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_PhaseOut_44k_16bit_2ch.wav"
+output = "StereoLimiter_LR_PhaseOut_TH_-3dB_AT_5ms_RT_200ms.wav"
 out-channels = 2
 block-size = 256
+enabled = true
 input-gain = 1.0
 output-gain = 1.0
 threshold = -3.0        # dB

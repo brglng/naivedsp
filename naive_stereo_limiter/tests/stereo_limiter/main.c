@@ -18,8 +18,10 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
 
     (void)sample_rate;
 
-    err = naive_stereo_limiter_set_input_gain(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "input-gain"));
-
+    err = naive_stereo_limiter_set_enabled(&context->stereo_limiter_obj, (NaiveBool)toml_table_get_as_boolean(config, "enabled"));
+    if (!err) {
+        err = naive_stereo_limiter_set_input_gain(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "input-gain"));
+    }
     if (!err) {
         err = naive_stereo_limiter_set_output_gain(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "output-gain"));
     }
@@ -28,10 +30,10 @@ NaiveErr set_params(void *_context, NAIVE_CONST TomlTable *config, NaiveI32 samp
         err = naive_stereo_limiter_set_threshold(&context->stereo_limiter_obj, NAIVE_FROM_DB(threshold_db));
     }
     if (!err) {
-        err = naive_stereo_limiter_set_attack_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "attack-time"));
+        err = naive_stereo_limiter_set_attack_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_integer(config, "attack-time") / 1000.0f);
     }
     if (!err) {
-        err = naive_stereo_limiter_set_release_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_float(config, "release-time"));
+        err = naive_stereo_limiter_set_release_time(&context->stereo_limiter_obj, (NaiveF32)toml_table_get_as_integer(config, "release-time") / 1000.0f);
     }
 
     return err;
@@ -87,9 +89,6 @@ int main(void)
     TestContext context;
 
     err = naive_default_allocator_init(&allocator);
-    if (!err) {
-        err = naive_stereo_limiter_init(&context.stereo_limiter_obj, &allocator, &naive_default_alloc, 100);
-    }
     if (!err) {
         err = naive_test_init(&test,
                               &naive_default_alloc,
