@@ -119,6 +119,41 @@ void naive_stereo_limiter_reset(NaiveStereoLimiter *self)
     naive_delay_buf_reset(&self->right_delay_buf);
 }
 
+NaiveBool naive_stereo_limiter_get_enabled(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->enabled;
+}
+
+NaiveF32 naive_stereo_limiter_get_input_gain(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->input_gain;
+}
+
+NaiveF32 naive_stereo_limiter_get_output_gain(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->output_gain;
+}
+
+NaiveF32 naive_stereo_limiter_get_threshold(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->threshold;
+}
+
+NaiveF32 naive_stereo_limiter_get_attack_time(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->attack_time;
+}
+
+NaiveF32 naive_stereo_limiter_get_release_time(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->release_time;
+}
+
+NaiveI32 naive_stereo_limiter_get_delay_len(NAIVE_CONST NaiveStereoLimiter *self)
+{
+    return self->delay_len;
+}
+
 NaiveErr naive_stereo_limiter_set_enabled(NaiveStereoLimiter *self, NaiveBool enabled)
 {
     self->enabled = enabled;
@@ -151,6 +186,7 @@ NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32
     if (attack_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
 
+    self->attack_time = attack_time;
     if (attack_time == 0.0f) {
         self->attack_coeff = 1.0f;
     } else {
@@ -165,6 +201,7 @@ NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF3
     if (release_time < 0.0f)
         return NAIVE_ERR_INVALID_PARAMETER;
 
+    self->release_time = release_time;
     if (release_time == 0.0f) {
         self->release_coeff = 1.0f;
     } else {
@@ -174,10 +211,8 @@ NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF3
     return NAIVE_OK;
 }
 
-NaiveErr naive_stereo_limiter_set_delay_time(NaiveStereoLimiter *self, NaiveF32 delay_time)
+NaiveErr naive_stereo_limiter_set_delay_len(NaiveStereoLimiter *self, NaiveI32 delay_len)
 {
-    NaiveI32 delay_len = (NaiveI32)(delay_time * (NaiveF32)self->sample_rate + 0.5f);
-
     if (delay_len < 0 || delay_len > self->left_delay_buf.size)
         return NAIVE_ERR_INVALID_PARAMETER;
 

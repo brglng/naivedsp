@@ -14,7 +14,9 @@ typedef struct {
     NaiveF32        output_gain;
     NaiveF32        threshold;
     NaiveI32        delay_len;
+    NaiveF32        attack_time;
     NaiveF32        attack_coeff;
+    NaiveF32        release_time;
     NaiveF32        release_coeff;
     NaiveF32        prev_left_peak;
     NaiveF32        prev_right_peak;
@@ -31,13 +33,21 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self,
                                       NaiveI32 block_size);
 void naive_stereo_limiter_reset(NaiveStereoLimiter *self);
 
+NaiveBool naive_stereo_limiter_get_enabled(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveF32 naive_stereo_limiter_get_input_gain(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveF32 naive_stereo_limiter_get_output_gain(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveF32 naive_stereo_limiter_get_threshold(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveF32 naive_stereo_limiter_get_attack_time(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveF32 naive_stereo_limiter_get_release_time(NAIVE_CONST NaiveStereoLimiter *self);
+NaiveI32 naive_stereo_limiter_get_delay_len(NAIVE_CONST NaiveStereoLimiter *self);
+
 NaiveErr naive_stereo_limiter_set_enabled(NaiveStereoLimiter *self, NaiveBool enabled);
 NaiveErr naive_stereo_limiter_set_input_gain(NaiveStereoLimiter *self, NaiveF32 input_gain);
 NaiveErr naive_stereo_limiter_set_output_gain(NaiveStereoLimiter *self, NaiveF32 output_gain);
 NaiveErr naive_stereo_limiter_set_threshold(NaiveStereoLimiter *self, NaiveF32 threshold);
 NaiveErr naive_stereo_limiter_set_attack_time(NaiveStereoLimiter *self, NaiveF32 attack_time);
 NaiveErr naive_stereo_limiter_set_release_time(NaiveStereoLimiter *self, NaiveF32 release_time);
-NaiveErr naive_stereo_limiter_set_delay_time(NaiveStereoLimiter *self, NaiveF32 delay_time);
+NaiveErr naive_stereo_limiter_set_delay_len(NaiveStereoLimiter *self, NaiveI32 delay_len);
 void naive_stereo_limiter_set_default_params(NaiveStereoLimiter *self);
 
 #ifdef __cplusplus
