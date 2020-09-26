@@ -2,12 +2,22 @@
 
 A naive DSP library which implements several audio effects and processing algorithms.
 
-## Build
+## Build and Install
+
+On Linux and macOS:
 
     mkdir build
     cd build
     cmake [-DCMAKE_BUILD_TYPE=<Debug|Release|RelWithDebInfo>] ..
     make
+    sudo make install
+
+On Windows:
+
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build .
 
 ## CMake Support
 
