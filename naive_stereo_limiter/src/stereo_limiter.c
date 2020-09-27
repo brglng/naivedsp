@@ -97,8 +97,8 @@ NaiveErr naive_stereo_limiter_process(NaiveStereoLimiter *self,
 
         gain = (1 - coeff) * gain + coeff * target_gain;
 
-        out_left[i] *= gain;
-        out_right[i] *= gain;
+        out_left[i] *= input_gain * gain;
+        out_right[i] *= input_gain * gain;
     }
     self->prev_left_peak = left_peak;
     self->prev_right_peak = right_peak;
