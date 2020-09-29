@@ -15,7 +15,7 @@ NaiveErr naive_stereo_limiter_init(NaiveStereoLimiter *self, void *alloc_context
     self->threshold = 1.0f;
     self->delay_len = 5;
     self->attack_coeff = 1.0f;
-    self->release_coeff = 1.0f - expf(-logf(9) / (0.12f * (NaiveF32)sample_rate));
+    self->release_coeff = 1.0f - expf(-logf(9.0f) / (0.12f * (NaiveF32)sample_rate));
     self->prev_left_peak = 0.0f;
     self->prev_right_peak = 0.0f;
     self->prev_gain = 1.0f;

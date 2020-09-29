@@ -10,6 +10,13 @@ extern "C" {
 #include "naivedsp/err.h"
 #include "naivedsp/memory.h"
 
+typedef struct {
+    NaiveF32  *buf;
+    NaiveI32  size;
+    NaiveI32  pos;
+    NaiveI32  len;
+} NaiveDelayBuf;
+
 NaiveErr naive_delay_buf_init(NaiveDelayBuf *self, void *allocator, NaiveAllocFunc alloc, NaiveI32 size);
 
 NAIVE_INLINE void naive_delay_buf_reset(NaiveDelayBuf *self) {
