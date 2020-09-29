@@ -1,6 +1,6 @@
-[StereoLimiter_Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_PhaseOut_TH_-3dB_AT_5ms_RT_200ms]
-input = "Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_PhaseOut_44k_16bit_2ch.wav"
-output = "StereoLimiter_LR_PhaseOut_TH_-3dB_AT_5ms_RT_200ms.wav"
+[StereoLimiter_Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_Unaligned_TH_-3dB_AT_5ms_RT_200ms]
+input = "Tone_1kHz_-6dBFS_-1dBFS_Varying_LR_Unaligned_44k_16bit_2ch.wav"
+output = "StereoLimiter_LR_Unaligned_TH_-3dB_AT_5ms_RT_200ms.wav"
 out-channels = 2
 block-size = 256
 enabled = true
